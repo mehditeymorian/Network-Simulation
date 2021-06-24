@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class NetworkConfig {
-    private final int startPort = 1000;
+    public static final int MANAGER_TCP_PORT = 1000;
     private final String tcpAddress = "localhost";
 
     private String fileName; // config file name
@@ -49,10 +49,10 @@ public class NetworkConfig {
             int to = Integer.parseInt(split[1]);
             int distance = Integer.parseInt(split[2]);
             distances[from][to] = distance;
-            distances[to][from] = distance;
+//            distances[to][from] = distance;
 
             if (i <= size) {
-                RouterInfo routerInfo = new RouterInfo(startPort + i - 1 , tcpAddress , startPort + i - 1 + lines.size());
+                RouterInfo routerInfo = new RouterInfo(MANAGER_TCP_PORT + i , tcpAddress , MANAGER_TCP_PORT + i + lines.size());
                 Router router = new Router(i - 1 , routerInfo);
                 routers.add(router);
             }
@@ -67,5 +67,9 @@ public class NetworkConfig {
 
     public List<Router> getRouters() {
         return routers;
+    }
+
+    public int[][] getDistances() {
+        return distances;
     }
 }
