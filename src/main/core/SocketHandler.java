@@ -1,3 +1,5 @@
+package main.core;
+
 import java.net.DatagramSocket;
 import java.net.Socket;
 

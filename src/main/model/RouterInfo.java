@@ -1,3 +1,5 @@
+package main.model;
+
 public class RouterInfo {
     private int tcpPort;
     private String tcpAddress;

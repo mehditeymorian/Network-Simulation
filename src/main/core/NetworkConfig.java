@@ -1,3 +1,7 @@
+package main.core;
+
+import main.model.RouterInfo;
+
 import java.util.ArrayList;
 import java.util.List;
 

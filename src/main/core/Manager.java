@@ -1,3 +1,5 @@
+package main.core;
+
 import java.net.Socket;
 
 public class Manager extends Thread{

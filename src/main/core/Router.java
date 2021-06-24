@@ -1,3 +1,5 @@
+package main.core;
+
 import java.net.DatagramSocket;
 import java.net.Socket;
 
@@ -25,7 +27,7 @@ public class Router extends Thread{
 
 
     public String getRouterName() {
-        return String.format("Router %d\n" , getRouterId());
+        return String.format("main.core.Router %d\n" , getRouterId());
     }
 
     public int getRouterId() {
