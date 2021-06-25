@@ -10,7 +10,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 
-public class RouterRequestHandler extends Thread {
+public class ManagerRequestHandler extends Thread {
     private Manager manager;
     private Socket socket;
     private int routerId;
@@ -20,13 +20,13 @@ public class RouterRequestHandler extends Thread {
     private boolean isSafeSent = false;
 
 
-    public static RouterRequestHandler handle(Manager manager , Socket socket) {
-        RouterRequestHandler routerRequestHandler = new RouterRequestHandler(manager , socket);
-        routerRequestHandler.start();
-        return routerRequestHandler;
+    public static ManagerRequestHandler handle(Manager manager, Socket socket) {
+        ManagerRequestHandler managerRequestHandler = new ManagerRequestHandler(manager, socket);
+        managerRequestHandler.start();
+        return managerRequestHandler;
     }
 
-    private RouterRequestHandler(Manager manager , Socket socket) {
+    private ManagerRequestHandler(Manager manager, Socket socket) {
         this.manager = manager;
         this.socket = socket;
         safeSem = new Semaphore(0);
@@ -95,14 +95,16 @@ public class RouterRequestHandler extends Thread {
     private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
         writer.write("CONNECTIVITY_TABLE");
         crlf();
+        writer.write(routerNeighbors.size());
+        crlf();
         for (Connectivity routerNeighbor : routerNeighbors) {
 
             writer.write(routerNeighbor.getId() + "");
             crlf();
             writer.write(routerNeighbor.getDistance() + "");
             crlf();
-            writer.write(String.format("%s %s %s" , routerNeighbor.getInfo().getTcpAddress() ,
-                    routerNeighbor.getInfo().getTcpPort() ,
+            writer.write(String.format("%s %s %s", routerNeighbor.getInfo().getTcpPort(),
+                    routerNeighbor.getInfo().getTcpAddress(),
                     routerNeighbor.getInfo().getUdpPort()));
         }
         crlf();
