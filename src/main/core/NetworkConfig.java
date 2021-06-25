@@ -1,6 +1,7 @@
 package main.core;
 
 import main.Main;
+import main.model.Connectivity;
 import main.model.RouterInfo;
 
 import java.io.IOException;
@@ -13,9 +14,10 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetworkConfig {
-    public static final int MANAGER_TCP_PORT = 1000;
+    public static final int MANAGER_TCP_PORT = 9000;
     private final String tcpAddress = "localhost";
 
     private String fileName; // config file name
@@ -60,6 +62,26 @@ public class NetworkConfig {
         }
     }
 
+    public List<Connectivity> getRouterNeighbors(int routerId) {
+        List<Connectivity> neighbors = new ArrayList<>();
+        int[] x = distances[routerId];
+        for (int j = 0; j < x.length; j++) {
+            if (x[j] != 0) {
+                RouterInfo neighborInfo = getRouters().get(j).getInfo();
+                Connectivity connectivity = new Connectivity(j , neighborInfo , x[j]);
+                neighbors.add(connectivity);
+            }
+        }
+        return neighbors;
+    }
+
+    public int findRouter(int udpPort) {
+        for (Router router : routers) {
+            if (router.getInfo().getUdpPort() == udpPort)
+                return router.getRouterId();
+        }
+        return -1;
+    }
 
     public int distanceBetween(int from , int to) {
         return distances[from][to];
@@ -71,5 +93,9 @@ public class NetworkConfig {
 
     public int[][] getDistances() {
         return distances;
+    }
+
+    public int getSize() {
+        return size;
     }
 }
