@@ -17,7 +17,7 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class NetworkConfig {
-    public static final int MANAGER_TCP_PORT = 1000;
+    public static final int MANAGER_TCP_PORT = 9000;
     private final String tcpAddress = "localhost";
 
     private String fileName; // config file name

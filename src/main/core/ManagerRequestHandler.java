@@ -1,5 +1,6 @@
 package main.core;
 
+import main.Main;
 import main.model.Connectivity;
 
 import java.io.BufferedReader;
@@ -71,11 +72,13 @@ public class ManagerRequestHandler extends Thread {
     }
 
     private void handleAckRequest(BufferedReader reader) throws IOException {
+        Main.logger.info("Ack received");
         reader.readLine();
         reader.readLine();
     }
 
     private void handleReadyRequest(BufferedReader reader) throws IOException {
+        Main.logger.info("Ready received");
         reader.readLine();
         reader.readLine();
         manager.incrementReadyRouterCount();
@@ -90,12 +93,14 @@ public class ManagerRequestHandler extends Thread {
         List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
+        Main.logger.info(String.format("%s udp port received" , routerId));
     }
 
     private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
+
         writer.write("CONNECTIVITY_TABLE");
         crlf();
-        writer.write(routerNeighbors.size());
+        writer.write(routerNeighbors.size() + "");
         crlf();
         for (Connectivity routerNeighbor : routerNeighbors) {
 
@@ -106,8 +111,9 @@ public class ManagerRequestHandler extends Thread {
             writer.write(String.format("%s %s %s", routerNeighbor.getInfo().getTcpPort(),
                     routerNeighbor.getInfo().getTcpAddress(),
                     routerNeighbor.getInfo().getUdpPort()));
+            crlf();
         }
-        crlf();
+
         writer.flush();
     }
 

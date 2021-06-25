@@ -1,6 +1,8 @@
 package main.core;
 
 
+import main.Main;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -37,13 +39,16 @@ public class Manager extends Thread {
     @Override
     public synchronized void start() {
         super.start();
+        for (Router router : config.getRouters()) {
+            router.start();
+        }
 
     }
 
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
-
+//        Main.logger.info("Manager started");
         while (true) {
             try {
                 Socket tcp = serverSocket.accept();

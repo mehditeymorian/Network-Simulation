@@ -1,5 +1,6 @@
 package main.core;
 
+import main.Main;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
@@ -14,6 +15,7 @@ public class RouterRequestHandler extends Thread {
     public RouterRequestHandler(Router router, Socket socket) {
         this.socket = socket;
         this.router = router;
+        initSocketOutputWriter(socket);
     }
 
     private void initSocketOutputWriter(Socket socket) {
@@ -45,7 +47,6 @@ public class RouterRequestHandler extends Thread {
     }
 
     private void handleConnectivityTable(BufferedReader reader) throws IOException {
-        crlf();
         int numOfNeighbors = Integer.parseInt(reader.readLine());
         crlf();
         for (int i = 0; i < numOfNeighbors; i++) {
@@ -62,6 +63,17 @@ public class RouterRequestHandler extends Thread {
             this.router.addNeighbors(neighbor);
 
         }
+        Main.logger.info(String.format("Router %s connectivity table updated" , this.router.getRouterId()));
+
+    }
+
+    public void sendUdpPort() throws IOException {
+        writer.write("UDP_PORT");
+        crlf();
+        writer.write(this.router.getInfo().getUdpPort() + "");
+        crlf();
+        crlf();
+        writer.flush();
     }
 
     private void handleSafe() {
