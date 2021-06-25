@@ -9,15 +9,24 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.List;
 
-public class ManagerSocketHandler extends Thread {
+public class RouterRequestHandler extends Thread {
     private NetworkConfig config;
     private Socket socket;
     private int routerId;
     private OutputStreamWriter writer;
 
-    public ManagerSocketHandler(NetworkConfig config , Socket socket) {
+
+    public static void handle(NetworkConfig config , Socket socket) {
+        new RouterRequestHandler(config,socket).start();
+    }
+
+    private RouterRequestHandler(NetworkConfig config , Socket socket) {
         this.config = config;
         this.socket = socket;
+        initSocketOutputWriter(socket);
+    }
+
+    private void initSocketOutputWriter(Socket socket) {
         try {
             writer = new OutputStreamWriter(socket.getOutputStream());
         } catch (IOException e) {
@@ -33,29 +42,41 @@ public class ManagerSocketHandler extends Thread {
                 String action = reader.readLine();
                 switch (action) {
                     case "UDP_PORT":
-                        int udpPort = Integer.parseInt(reader.readLine());
-                        routerId = config.findRouter(udpPort);
-                        List<Connectivity> routerNeighbors = config.getRouterNeighbors(routerId);
-                        sendRouterNeighbors(routerNeighbors);
-                        reader.readLine();
+                        handleUdpPortRequest(reader);
                         break;
 
                     case "READY":
-                        reader.readLine();
-                        reader.readLine();
-                        int readyRouters = config.readRouters.incrementAndGet();
-                        sendSafeMessage();
-
-                        // TODO: 6/24/2021 log
+                        handleReadyRequest(reader);
                         break;
                     case "ACK":
-
+                        handleAckRequest(reader);
                         break;
                 }
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleAckRequest(BufferedReader reader) {
+
+    }
+
+    private void handleReadyRequest(BufferedReader reader) throws IOException {
+        reader.readLine();
+        reader.readLine();
+        int readyRouters = config.readRouters.incrementAndGet();
+        sendSafeMessage();
+
+        // TODO: 6/24/2021 log
+    }
+
+    private void handleUdpPortRequest(BufferedReader reader) throws IOException {
+        int udpPort = Integer.parseInt(reader.readLine());
+        routerId = config.findRouter(udpPort);
+        List<Connectivity> routerNeighbors = config.getRouterNeighbors(routerId);
+        sendRouterNeighbors(routerNeighbors);
+        reader.readLine();
     }
 
     private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
