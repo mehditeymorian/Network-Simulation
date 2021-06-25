@@ -14,7 +14,7 @@ public class Router extends Thread {
     private RouterInfo info;
     private List<Connectivity> neighbors;
     private Socket managerSocket;
-    private SocketHandler socketHandler;
+    private UdpRequestHandler udpRequestHandler;
     private RouterRequestHandler routerRequestHandler;
 
     public Router(int routerId, RouterInfo info) {
@@ -32,7 +32,7 @@ public class Router extends Thread {
         Main.logger.info("Router started");
         try {
             managerSocket = new Socket(info.getTcpAddress(), NetworkConfig.MANAGER_TCP_PORT);
-            socketHandler = new SocketHandler(managerSocket);
+            udpRequestHandler = new UdpRequestHandler(this);
             routerRequestHandler = new RouterRequestHandler(this, managerSocket);
             routerRequestHandler.start();
             routerRequestHandler.sendUdpPort();
