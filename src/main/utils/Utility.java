@@ -1,5 +1,7 @@
 package main.utils;
 
+import java.util.Arrays;
+
 public class Utility {
 
 
@@ -53,4 +55,13 @@ public class Utility {
         return minIndex;
     }
 
+    public static byte[] trimData(byte[] data) {
+        int i = 0;
+        while (i < data.length) {
+            if (data[i++] == 0)
+                break;
+        }
+
+        return Arrays.copyOf(data , i-1);
+    }
 }
