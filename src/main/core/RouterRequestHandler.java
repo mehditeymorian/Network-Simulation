@@ -70,8 +70,9 @@ public class RouterRequestHandler extends Thread {
         }
     }
 
-    private void handleAckRequest(BufferedReader reader) {
-
+    private void handleAckRequest(BufferedReader reader) throws IOException {
+        reader.readLine();
+        reader.readLine();
     }
 
     private void handleReadyRequest(BufferedReader reader) throws IOException {
@@ -92,9 +93,10 @@ public class RouterRequestHandler extends Thread {
     }
 
     private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
+        writer.write("CONNECTIVITY_TABLE");
+        crlf();
         for (Connectivity routerNeighbor : routerNeighbors) {
-            writer.write("CONNECTIVITY_TABLE");
-            crlf();
+
             writer.write(routerNeighbor.getId() + "");
             crlf();
             writer.write(routerNeighbor.getDistance() + "");
@@ -102,10 +104,9 @@ public class RouterRequestHandler extends Thread {
             writer.write(String.format("%s %s %s" , routerNeighbor.getInfo().getTcpAddress() ,
                     routerNeighbor.getInfo().getTcpPort() ,
                     routerNeighbor.getInfo().getUdpPort()));
-            crlf();
-            writer.flush();
         }
-
+        crlf();
+        writer.flush();
     }
 
     private void sendSafeMessage() throws IOException {
@@ -114,7 +115,6 @@ public class RouterRequestHandler extends Thread {
         crlf();
         crlf();
         writer.flush();
-
     }
 
     private void crlf() throws IOException {
