@@ -8,21 +8,28 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class RouterRequestHandler extends Thread {
-    private NetworkConfig config;
+    private Manager manager;
     private Socket socket;
     private int routerId;
     private OutputStreamWriter writer;
+    public Semaphore safeSem;
+    private boolean isReadyReceived = false;
+    private boolean isSafeSent = false;
 
 
-    public static void handle(NetworkConfig config , Socket socket) {
-        new RouterRequestHandler(config,socket).start();
+    public static RouterRequestHandler handle(Manager manager , Socket socket) {
+        RouterRequestHandler routerRequestHandler = new RouterRequestHandler(manager , socket);
+        routerRequestHandler.start();
+        return routerRequestHandler;
     }
 
-    private RouterRequestHandler(NetworkConfig config , Socket socket) {
-        this.config = config;
+    private RouterRequestHandler(Manager manager , Socket socket) {
+        this.manager = manager;
         this.socket = socket;
+        safeSem = new Semaphore(0);
         initSocketOutputWriter(socket);
     }
 
@@ -44,7 +51,6 @@ public class RouterRequestHandler extends Thread {
                     case "UDP_PORT":
                         handleUdpPortRequest(reader);
                         break;
-
                     case "READY":
                         handleReadyRequest(reader);
                         break;
@@ -52,8 +58,14 @@ public class RouterRequestHandler extends Thread {
                         handleAckRequest(reader);
                         break;
                 }
+
+                if (isReadyReceived && !isSafeSent) {
+                    safeSem.acquire();
+                    sendSafeMessage();
+                    isSafeSent = true;
+                }
             }
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
@@ -65,16 +77,16 @@ public class RouterRequestHandler extends Thread {
     private void handleReadyRequest(BufferedReader reader) throws IOException {
         reader.readLine();
         reader.readLine();
-        int readyRouters = config.readRouters.incrementAndGet();
-        sendSafeMessage();
+        manager.incrementReadyRouterCount();
+        isReadyReceived = true;
 
         // TODO: 6/24/2021 log
     }
 
     private void handleUdpPortRequest(BufferedReader reader) throws IOException {
         int udpPort = Integer.parseInt(reader.readLine());
-        routerId = config.findRouter(udpPort);
-        List<Connectivity> routerNeighbors = config.getRouterNeighbors(routerId);
+        routerId = manager.getConfig().findRouter(udpPort);
+        List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
     }

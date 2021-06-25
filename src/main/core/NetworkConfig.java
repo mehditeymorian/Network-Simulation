@@ -24,12 +24,10 @@ public class NetworkConfig {
     private int size; // routers count
     private int[][] distances; // distances between routers
     private List<Router> routers;
-    public AtomicInteger readRouters;
 
 
     public NetworkConfig(String fileName) {
         this.fileName = fileName;
-        readRouters = new AtomicInteger();
         routers = new ArrayList<>();
         try {
             readConfigFile();
@@ -95,5 +93,9 @@ public class NetworkConfig {
 
     public int[][] getDistances() {
         return distances;
+    }
+
+    public int getSize() {
+        return size;
     }
 }
