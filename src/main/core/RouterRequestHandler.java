@@ -1,36 +1,19 @@
 package main.core;
 
 import main.model.Connectivity;
+import main.model.RouterInfo;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
+import java.io.*;
 import java.net.Socket;
-import java.util.List;
-import java.util.concurrent.Semaphore;
 
 public class RouterRequestHandler extends Thread {
-    private Manager manager;
     private Socket socket;
-    private int routerId;
     private OutputStreamWriter writer;
-    public Semaphore safeSem;
-    private boolean isReadyReceived = false;
-    private boolean isSafeSent = false;
+    private Router router;
 
-
-    public static RouterRequestHandler handle(Manager manager , Socket socket) {
-        RouterRequestHandler routerRequestHandler = new RouterRequestHandler(manager , socket);
-        routerRequestHandler.start();
-        return routerRequestHandler;
-    }
-
-    private RouterRequestHandler(Manager manager , Socket socket) {
-        this.manager = manager;
+    public RouterRequestHandler(Router router, Socket socket) {
         this.socket = socket;
-        safeSem = new Semaphore(0);
-        initSocketOutputWriter(socket);
+        this.router = router;
     }
 
     private void initSocketOutputWriter(Socket socket) {
@@ -48,73 +31,41 @@ public class RouterRequestHandler extends Thread {
             while (true) {
                 String action = reader.readLine();
                 switch (action) {
-                    case "UDP_PORT":
-                        handleUdpPortRequest(reader);
+                    case "CONNECTIVITY_TABLE":
+                        handleConnectivityTable(reader);
                         break;
-                    case "READY":
-                        handleReadyRequest(reader);
-                        break;
-                    case "ACK":
-                        handleAckRequest(reader);
-                        break;
-                }
-
-                if (isReadyReceived && !isSafeSent) {
-                    safeSem.acquire();
-                    sendSafeMessage();
-                    isSafeSent = true;
+                    case "SAFE":
+                        handleSafe();
                 }
             }
-        } catch (IOException | InterruptedException e) {
+
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    private void handleAckRequest(BufferedReader reader) throws IOException {
-        reader.readLine();
-        reader.readLine();
-    }
-
-    private void handleReadyRequest(BufferedReader reader) throws IOException {
-        reader.readLine();
-        reader.readLine();
-        manager.incrementReadyRouterCount();
-        isReadyReceived = true;
-
-        // TODO: 6/24/2021 log
-    }
-
-    private void handleUdpPortRequest(BufferedReader reader) throws IOException {
-        int udpPort = Integer.parseInt(reader.readLine());
-        routerId = manager.getConfig().findRouter(udpPort);
-        List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
-        sendRouterNeighbors(routerNeighbors);
-        reader.readLine();
-    }
-
-    private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
-        writer.write("CONNECTIVITY_TABLE");
+    private void handleConnectivityTable(BufferedReader reader) throws IOException {
         crlf();
-        for (Connectivity routerNeighbor : routerNeighbors) {
+        int numOfNeighbors = Integer.parseInt(reader.readLine());
+        crlf();
+        for (int i = 0; i < numOfNeighbors; i++) {
+            int routerId = Integer.parseInt(reader.readLine());
+            crlf();
+            int routerDistance = Integer.parseInt(reader.readLine());
+            crlf();
+            String[] connectionDetails = reader.readLine().split(" ");
+            RouterInfo routerInfo = new RouterInfo(Integer.parseInt(connectionDetails[0]),
+                    connectionDetails[1],
+                    Integer.parseInt(connectionDetails[2]));
 
-            writer.write(routerNeighbor.getId() + "");
-            crlf();
-            writer.write(routerNeighbor.getDistance() + "");
-            crlf();
-            writer.write(String.format("%s %s %s" , routerNeighbor.getInfo().getTcpAddress() ,
-                    routerNeighbor.getInfo().getTcpPort() ,
-                    routerNeighbor.getInfo().getUdpPort()));
+            Connectivity neighbor = new Connectivity(routerId, routerInfo, routerDistance);
+            this.router.addNeighbors(neighbor);
+
         }
-        crlf();
-        writer.flush();
     }
 
-    private void sendSafeMessage() throws IOException {
-        writer.write("SAFE");
-        crlf();
-        crlf();
-        crlf();
-        writer.flush();
+    private void handleSafe() {
+        // TODO
     }
 
     private void crlf() throws IOException {

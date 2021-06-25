@@ -13,7 +13,7 @@ public class Manager extends Thread {
     private final NetworkConfig config;
     private ServerSocket serverSocket;
     private final AtomicInteger readRouters;
-    private final List<RouterRequestHandler> handlers;
+    private final List<ManagerRequestHandler> handlers;
 
 
     public Manager(String fileName) {
@@ -47,7 +47,7 @@ public class Manager extends Thread {
         while (true) {
             try {
                 Socket tcp = serverSocket.accept();
-                RouterRequestHandler handler = RouterRequestHandler.handle(this , tcp);
+                ManagerRequestHandler handler = ManagerRequestHandler.handle(this , tcp);
                 handlers.add(handler);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -63,7 +63,7 @@ public class Manager extends Thread {
     public void incrementReadyRouterCount() {
         int i = readRouters.incrementAndGet();
         if (i == config.getSize())
-            for (RouterRequestHandler handler : handlers)
+            for (ManagerRequestHandler handler : handlers)
                 handler.safeSem.release();
     }
 }
