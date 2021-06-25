@@ -1,5 +1,6 @@
 package main.core;
 
+import main.utils.UdpDataBuilder;
 import main.utils.Utility;
 
 import java.io.IOException;
@@ -28,10 +29,11 @@ public class UdpRequestHandler extends Thread{
     @Override
     public void run() {
         while (true) {
-            String s = receivePacket();
-            switch (s) {
+            String[] receivedData = receivePacket().split("\n");
+            switch (receivedData[0]) {
                 case "CHECK_CONNECTION":
-
+                    String response = UdpDataBuilder.forAction("ACK").build();
+                    sendPacket(response,Integer.parseInt(receivedData[1]));
                     break;
                 case "ACK":
 
@@ -47,7 +49,8 @@ public class UdpRequestHandler extends Thread{
     }
 
 
-    public void sendPacket(DatagramPacket packet,int destinationPort) {
+    public void sendPacket(String data,int destinationPort) {
+        DatagramPacket packet = new DatagramPacket(data.getBytes() , data.length());
         InetAddress ip = null;
         try {
             ip = InetAddress.getByName("127.0.0.1");
