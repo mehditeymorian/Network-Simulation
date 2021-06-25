@@ -13,10 +13,12 @@ public class Router extends Thread{
     private List<Connectivity> neighbors;
     private Socket managerSocket;
     private SocketHandler socketHandler;
+    private RouterRequestHandler routerRequestHandler;
 
     public Router(int routerId , RouterInfo info) {
         this.routerId = routerId;
         this.info = info;
+
         // TODO: 6/24/2021 init sockets
 
     }
@@ -27,6 +29,7 @@ public class Router extends Thread{
         try {
             managerSocket = new Socket(info.getTcpAddress() , NetworkConfig.MANAGER_TCP_PORT);
             socketHandler = new SocketHandler(managerSocket);
+            routerRequestHandler = new RouterRequestHandler(this , managerSocket);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -51,5 +54,9 @@ public class Router extends Thread{
 
     public int getRouterId() {
         return routerId;
+    }
+
+    public void addNeighbors(Connectivity neighbor){
+        this.neighbors.add(neighbor);
     }
 }
