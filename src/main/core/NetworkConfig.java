@@ -51,7 +51,7 @@ public class NetworkConfig {
             int to = Integer.parseInt(split[1]);
             int distance = Integer.parseInt(split[2]);
             distances[from][to] = distance;
-//            distances[to][from] = distance;
+            distances[to][from] = distance;
 
             if (i <= size) {
                 RouterInfo routerInfo = new RouterInfo(MANAGER_TCP_PORT + i , tcpAddress , MANAGER_TCP_PORT + i + lines.size());
