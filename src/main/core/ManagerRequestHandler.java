@@ -62,6 +62,7 @@ public class ManagerRequestHandler extends Thread {
 
                 if (isReadyReceived && !isSafeSent) {
                     safeSem.acquire();
+                    Main.logger.info("Network is ready.");
                     sendSafeMessage();
                     isSafeSent = true;
                 }

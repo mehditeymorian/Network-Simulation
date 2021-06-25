@@ -35,6 +35,7 @@ public class RouterRequestHandler extends Thread {
                 switch (action) {
                     case "CONNECTIVITY_TABLE":
                         handleConnectivityTable(reader);
+                        sendReadySignal();
                         break;
                     case "SAFE":
                         handleSafe();
@@ -48,12 +49,9 @@ public class RouterRequestHandler extends Thread {
 
     private void handleConnectivityTable(BufferedReader reader) throws IOException {
         int numOfNeighbors = Integer.parseInt(reader.readLine());
-        crlf();
         for (int i = 0; i < numOfNeighbors; i++) {
             int routerId = Integer.parseInt(reader.readLine());
-            crlf();
             int routerDistance = Integer.parseInt(reader.readLine());
-            crlf();
             String[] connectionDetails = reader.readLine().split(" ");
             RouterInfo routerInfo = new RouterInfo(Integer.parseInt(connectionDetails[0]),
                     connectionDetails[1],
@@ -63,9 +61,20 @@ public class RouterRequestHandler extends Thread {
             this.router.addNeighbors(neighbor);
 
         }
+
         Main.logger.info(String.format("Router %s connectivity table updated" , this.router.getRouterId()));
 
     }
+
+    private void sendReadySignal() throws IOException {
+        writer.write("READY");
+        crlf();
+        crlf();
+        crlf();
+        writer.flush();
+    }
+
+
 
     public void sendUdpPort() throws IOException {
         writer.write("UDP_PORT");
@@ -76,8 +85,8 @@ public class RouterRequestHandler extends Thread {
         writer.flush();
     }
 
-    private void handleSafe() {
-        // TODO
+    private void handleSafe() throws IOException {
+        Main.logger.info(String.format("Router %s Received safe signal" , router.getRouterId()));
     }
 
     private void crlf() throws IOException {
