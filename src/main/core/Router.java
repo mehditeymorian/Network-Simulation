@@ -16,11 +16,13 @@ public class Router extends Thread {
     private Socket managerSocket;
     private UdpRequestHandler udpRequestHandler;
     private RouterRequestHandler routerRequestHandler;
+    private int numOfAckedNeighbors;
 
     public Router(int routerId, RouterInfo info) {
         this.routerId = routerId;
         this.info = info;
         neighbors = new ArrayList<>();
+        numOfAckedNeighbors = 0;
 
         // TODO: 6/24/2021 init sockets
 
@@ -29,13 +31,14 @@ public class Router extends Thread {
     @Override
     public synchronized void start() {
         super.start();
-        Main.logger.info("Router started");
+        Main.logger.info(String.format("Router: Router %s started" , this.getRouterId()));
         try {
             managerSocket = new Socket(info.getTcpAddress(), NetworkConfig.MANAGER_TCP_PORT);
             udpRequestHandler = new UdpRequestHandler(this);
             routerRequestHandler = new RouterRequestHandler(this, managerSocket);
             routerRequestHandler.start();
             routerRequestHandler.sendUdpPort();
+            udpRequestHandler.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -66,4 +69,29 @@ public class Router extends Thread {
         this.neighbors.add(neighbor);
 
     }
+
+    public void incrementAckedNeighbors(){
+         this.numOfAckedNeighbors++ ;
+    }
+
+    public int getNumOfAckedNeighbors() {
+        return numOfAckedNeighbors;
+    }
+
+    public boolean hasAllNeighborsAcked(){
+        return this.numOfAckedNeighbors == getNumberOfNeighbors();
+    }
+
+    public int getNumberOfNeighbors(){
+        return this.neighbors.size();
+    }
+
+    public List<Connectivity> getNeighbors() {
+        return neighbors;
+    }
+
+    public UdpRequestHandler getUdpRequestHandler() {
+        return udpRequestHandler;
+    }
 }
+

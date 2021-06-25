@@ -16,6 +16,7 @@ public class Manager extends Thread {
     private ServerSocket serverSocket;
     private final AtomicInteger readRouters;
     private final List<ManagerRequestHandler> handlers;
+    private int numOfReadyForRoutingRouters ;
 
 
     public Manager(String fileName) {
@@ -23,6 +24,7 @@ public class Manager extends Thread {
         handlers = new ArrayList<>();
         readRouters = new AtomicInteger();
         initServerSocket();
+        numOfReadyForRoutingRouters = 0;
         // TODO: 6/24/2021 init socket
 
 
@@ -48,7 +50,6 @@ public class Manager extends Thread {
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
-//        Main.logger.info("Manager started");
         while (true) {
             try {
                 Socket tcp = serverSocket.accept();
@@ -57,6 +58,7 @@ public class Manager extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            
 
         }
     }
@@ -70,5 +72,13 @@ public class Manager extends Thread {
         if (i == config.getSize())
             for (ManagerRequestHandler handler : handlers)
                 handler.safeSem.release();
+    }
+
+    public void incrementNumOfReadyForRoutingRouters(){
+        this.numOfReadyForRoutingRouters ++;
+    }
+
+    public int getNumOfReadyForRoutingRouters() {
+        return numOfReadyForRoutingRouters;
     }
 }

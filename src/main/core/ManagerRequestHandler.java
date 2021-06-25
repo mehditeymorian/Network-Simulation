@@ -58,13 +58,22 @@ public class ManagerRequestHandler extends Thread {
                     case "ACK":
                         handleAckRequest(reader);
                         break;
+
+                    case "READY_FOR_ROUTING":
+                        this.manager.incrementNumOfReadyForRoutingRouters();
+                        break;
+
                 }
 
                 if (isReadyReceived && !isSafeSent) {
                     safeSem.acquire();
-                    Main.logger.info("Network is ready.");
+//                    Main.logger.info("Network is ready.");
                     sendSafeMessage();
                     isSafeSent = true;
+                }
+
+                if(isAllRoutersReadyForRouting()){
+                    sendAllRoutersReadyForRouting();
                 }
             }
         } catch (IOException | InterruptedException e) {
@@ -72,14 +81,21 @@ public class ManagerRequestHandler extends Thread {
         }
     }
 
+    private void sendAllRoutersReadyForRouting() throws IOException {
+        writer.write("ALL_ROUTERS_READY_FOR_ROUTING");
+        crlf();
+        crlf();
+        writer.flush();
+    }
+
     private void handleAckRequest(BufferedReader reader) throws IOException {
-        Main.logger.info("Ack received");
+//        Main.logger.info("Ack received");
         reader.readLine();
         reader.readLine();
     }
 
     private void handleReadyRequest(BufferedReader reader) throws IOException {
-        Main.logger.info("Ready received");
+        Main.logger.info("Manager: Ready signal received");
         reader.readLine();
         reader.readLine();
         manager.incrementReadyRouterCount();
@@ -90,11 +106,12 @@ public class ManagerRequestHandler extends Thread {
 
     private void handleUdpPortRequest(BufferedReader reader) throws IOException {
         int udpPort = Integer.parseInt(reader.readLine());
+        Main.logger.info(String.format("Manager: Received router %s udp port" , udpPort));
         routerId = manager.getConfig().findRouter(udpPort);
         List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
-        Main.logger.info(String.format("%s udp port received" , routerId));
+//        Main.logger.info(String.format("%s udp port received", routerId));
     }
 
     private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
@@ -118,7 +135,16 @@ public class ManagerRequestHandler extends Thread {
         writer.flush();
     }
 
+    private boolean isAllRoutersReadyForRouting(){
+        return numberOfRouters() == this.manager.getNumOfReadyForRoutingRouters();
+    }
+
+    private int numberOfRouters(){
+        return this.manager.getConfig().getRouters().size();
+    }
+
     private void sendSafeMessage() throws IOException {
+        Main.logger.info("Manager: Sending Safe signal");
         writer.write("SAFE");
         crlf();
         crlf();

@@ -1,16 +1,18 @@
 package main.core;
 
+import main.Main;
+import main.model.Connectivity;
 import main.utils.UdpDataBuilder;
 import main.utils.Utility;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.logging.Logger;
 
-public class UdpRequestHandler extends Thread{
+public class UdpRequestHandler extends Thread {
     private Router router;
     private DatagramSocket socket;
     public static final int BUFFER_SIZE = 2048;
-
 
 
     public UdpRequestHandler(Router router) {
@@ -32,10 +34,12 @@ public class UdpRequestHandler extends Thread{
             String[] receivedData = receivePacket().split("\n");
             switch (receivedData[0]) {
                 case "CHECK_CONNECTION":
+                    Main.logger.info(String.format("Router: Router %s received checking signal from %s", this.router.getRouterId(), receivedData[1]));
                     String response = UdpDataBuilder.forAction("ACK").build();
-                    sendPacket(response,Integer.parseInt(receivedData[1]));
+                    sendPacket(response, Integer.parseInt(receivedData[1]));
                     break;
                 case "ACK":
+                    handleReceivedAck();
 
                     break;
                 case "LSP":
@@ -45,12 +49,17 @@ public class UdpRequestHandler extends Thread{
 
                     break;
             }
+
         }
     }
 
+    private void handleReceivedAck() {
+        this.router.incrementAckedNeighbors();
+    }
 
-    public void sendPacket(String data,int destinationPort) {
-        DatagramPacket packet = new DatagramPacket(data.getBytes() , data.length());
+
+    public void sendPacket(String data, int destinationPort) {
+        DatagramPacket packet = new DatagramPacket(data.getBytes(), data.length());
         InetAddress ip = null;
         try {
             ip = InetAddress.getByName("127.0.0.1");
@@ -69,7 +78,7 @@ public class UdpRequestHandler extends Thread{
 
     private String receivePacket() {
         byte[] buffer = new byte[BUFFER_SIZE];
-        DatagramPacket packet = new DatagramPacket(buffer , BUFFER_SIZE);
+        DatagramPacket packet = new DatagramPacket(buffer, BUFFER_SIZE);
         try {
             socket.receive(packet);
         } catch (IOException e) {
@@ -77,6 +86,14 @@ public class UdpRequestHandler extends Thread{
         }
         byte[] data = Utility.trimData(packet.getData());
         return new String(data);
+    }
+
+    public void sendCheckingConnectionSignal() {
+        Main.logger.info(String.format("Router: Router %s is sending check signal to all it's neighbors" , this.router.getRouterId()));
+        String packet = UdpDataBuilder.forAction("CHECK_CONNECTION").append(String.valueOf(this.router.getInfo().getUdpPort())).build();
+        for (Connectivity neighbor : this.router.getNeighbors()) {
+            sendPacket(packet, neighbor.getInfo().getUdpPort());
+        }
     }
 
 
