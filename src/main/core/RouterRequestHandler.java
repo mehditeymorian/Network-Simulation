@@ -83,7 +83,7 @@ public class RouterRequestHandler extends Thread {
 
         }
 
-        Main.logger.info(String.format("Router: Router %s connectivity table updated" , this.router.getRouterId()));
+        Main.logger.info(String.format("Router: Router %s's neighbors are: %s" , this.router.getRouterId() , this.router.getNeighborIds()));
 
     }
 

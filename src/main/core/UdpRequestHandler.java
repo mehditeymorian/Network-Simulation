@@ -7,7 +7,6 @@ import main.utils.Utility;
 
 import java.io.IOException;
 import java.net.*;
-import java.util.logging.Logger;
 
 public class UdpRequestHandler extends Thread {
     private Router router;
@@ -34,7 +33,7 @@ public class UdpRequestHandler extends Thread {
             String[] receivedData = receivePacket().split("\n");
             switch (receivedData[0]) {
                 case "CHECK_CONNECTION":
-                    Main.logger.info(String.format("Router: Router %s received checking signal from %s", this.router.getRouterId(), receivedData[1]));
+                    Main.logger.info(String.format("Router: Router %s received CHECK_CONNECTION signal from %s", this.router.getRouterId(), receivedData[1]));
                     String response = UdpDataBuilder.forAction("ACK").build();
                     sendPacket(response, Integer.parseInt(receivedData[1]));
                     break;
@@ -89,7 +88,7 @@ public class UdpRequestHandler extends Thread {
     }
 
     public void sendCheckingConnectionSignal() {
-        Main.logger.info(String.format("Router: Router %s is sending check signal to all it's neighbors" , this.router.getRouterId()));
+        Main.logger.info(String.format("Router: Router %s (%s) is sending CHECK_CONNECTION signal to %s" , this.router.getRouterId() , this.router.getInfo().getUdpPort() , this.router.getNeighborIds()));
         String packet = UdpDataBuilder.forAction("CHECK_CONNECTION").append(String.valueOf(this.router.getInfo().getUdpPort())).build();
         for (Connectivity neighbor : this.router.getNeighbors()) {
             sendPacket(packet, neighbor.getInfo().getUdpPort());

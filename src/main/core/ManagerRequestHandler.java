@@ -109,6 +109,7 @@ public class ManagerRequestHandler extends Thread {
         Main.logger.info(String.format("Manager: Received router %s udp port" , udpPort));
         routerId = manager.getConfig().findRouter(udpPort);
         List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
+//        Main.logger.info(String.format("Manager: Neighbors of router %s are %s" , routerId , routerNeighbors));
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
 //        Main.logger.info(String.format("%s udp port received", routerId));

@@ -93,5 +93,15 @@ public class Router extends Thread {
     public UdpRequestHandler getUdpRequestHandler() {
         return udpRequestHandler;
     }
+
+    public String getNeighborIds(){
+        StringBuilder stringBuilder = new StringBuilder();
+        for (Connectivity neighbor : this.neighbors) {
+            stringBuilder.append(neighbor.getId());
+            stringBuilder.append(" ");
+        }
+
+        return stringBuilder.toString();
+    }
 }
 
