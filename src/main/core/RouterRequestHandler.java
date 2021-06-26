@@ -54,7 +54,7 @@ public class RouterRequestHandler extends Thread {
     }
 
     private void handleNetworkReady() {
-        Main.logger.info(String.format("Router: Router %s received ALL_ROUTER_READY_FOR_ROUTING signal", this.router.getRouterId()));
+        Main.logger.info(String.format("Router: Router %s received Network Ready signal", this.router.getRouterId()));
     }
 
     public void sendReadyForRoutingSignal() throws IOException {
