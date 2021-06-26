@@ -39,7 +39,6 @@ public class UdpRequestHandler extends Thread {
                     break;
                 case "ACK":
                     handleReceivedAck();
-
                     break;
                 case "LSP":
 
@@ -53,7 +52,7 @@ public class UdpRequestHandler extends Thread {
     }
 
     private void handleReceivedAck() {
-        this.router.incrementAckedNeighbors();
+        this.router.incrementAcksFromNeighbors();
     }
 
 

@@ -72,17 +72,14 @@ public class ManagerRequestHandler extends Thread {
                     isSafeSent = true;
                 }
 
-                if(isAllRoutersReadyForRouting()){
-                    sendAllRoutersReadyForRouting();
-                }
             }
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
         }
     }
 
-    private void sendAllRoutersReadyForRouting() throws IOException {
-        writer.write("ALL_ROUTERS_READY_FOR_ROUTING");
+    public void sendNetworkReady() throws IOException {
+        writer.write("NETWORK_READY");
         crlf();
         crlf();
         writer.flush();
@@ -134,14 +131,6 @@ public class ManagerRequestHandler extends Thread {
         }
 
         writer.flush();
-    }
-
-    private boolean isAllRoutersReadyForRouting(){
-        return numberOfRouters() == this.manager.getNumOfReadyForRoutingRouters();
-    }
-
-    private int numberOfRouters(){
-        return this.manager.getConfig().getRouters().size();
     }
 
     private void sendSafeMessage() throws IOException {

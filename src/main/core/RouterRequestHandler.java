@@ -6,7 +6,6 @@ import main.model.RouterInfo;
 
 import java.io.*;
 import java.net.Socket;
-import java.util.logging.Logger;
 
 public class RouterRequestHandler extends Thread {
     private Socket socket;
@@ -42,14 +41,11 @@ public class RouterRequestHandler extends Thread {
                         handleSafe();
                         break;
 
-                    case "ALL_ROUTERS_READY_FOR_ROUTING":
-                        receivedAllRoutersReadyForRouting();
+                    case "NETWORK_READY":
+                        handleNetworkReady();
                         break;
                 }
 
-                if (this.router.hasAllNeighborsAcked()) {
-                    sendReadyForRoutingSignal();
-                }
             }
 
         } catch (IOException e) {
@@ -57,11 +53,11 @@ public class RouterRequestHandler extends Thread {
         }
     }
 
-    private void receivedAllRoutersReadyForRouting() {
+    private void handleNetworkReady() {
         Main.logger.info(String.format("Router: Router %s received ALL_ROUTER_READY_FOR_ROUTING signal", this.router.getRouterId()));
     }
 
-    private void sendReadyForRoutingSignal() throws IOException {
+    public void sendReadyForRoutingSignal() throws IOException {
         writer.write("READY_FOR_ROUTING");
         crlf();
         crlf();

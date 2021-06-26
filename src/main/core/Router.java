@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Router extends Thread {
     private int routerId;
@@ -16,13 +17,13 @@ public class Router extends Thread {
     private Socket managerSocket;
     private UdpRequestHandler udpRequestHandler;
     private RouterRequestHandler routerRequestHandler;
-    private int numOfAckedNeighbors;
+    private AtomicInteger acksFromNeighbors;
 
     public Router(int routerId, RouterInfo info) {
         this.routerId = routerId;
         this.info = info;
         neighbors = new ArrayList<>();
-        numOfAckedNeighbors = 0;
+        acksFromNeighbors = new AtomicInteger();
 
         // TODO: 6/24/2021 init sockets
 
@@ -70,16 +71,16 @@ public class Router extends Thread {
 
     }
 
-    public void incrementAckedNeighbors(){
-         this.numOfAckedNeighbors++ ;
-    }
-
-    public int getNumOfAckedNeighbors() {
-        return numOfAckedNeighbors;
-    }
-
-    public boolean hasAllNeighborsAcked(){
-        return this.numOfAckedNeighbors == getNumberOfNeighbors();
+    public void incrementAcksFromNeighbors(){
+        acksFromNeighbors.incrementAndGet();
+        if (acksFromNeighbors.get() == getNumberOfNeighbors()) {
+            try {
+                Main.logger.info(String.format("router %d all acks received from neighbors",getRouterId()));
+                routerRequestHandler.sendReadyForRoutingSignal();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public int getNumberOfNeighbors(){
