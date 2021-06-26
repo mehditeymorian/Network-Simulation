@@ -1,7 +1,7 @@
 package main.handlers;
 
 
-import main.core.Manager;
+import main.core.NetworkManager;
 import main.model.Connectivity;
 
 import java.io.BufferedReader;
@@ -14,20 +14,20 @@ import java.util.List;
 import static main.log.LogManager.logM;
 
 public class ManagerRequestHandler extends Thread {
-    private Manager manager;
+    private NetworkManager networkManager;
     private Socket socket;
     private int routerId;
     private OutputStreamWriter writer;
 
 
-    public static ManagerRequestHandler handle(Manager manager, Socket socket) {
-        ManagerRequestHandler managerRequestHandler = new ManagerRequestHandler(manager, socket);
+    public static ManagerRequestHandler handle(NetworkManager networkManager , Socket socket) {
+        ManagerRequestHandler managerRequestHandler = new ManagerRequestHandler(networkManager , socket);
         managerRequestHandler.start();
         return managerRequestHandler;
     }
 
-    private ManagerRequestHandler(Manager manager, Socket socket) {
-        this.manager = manager;
+    private ManagerRequestHandler(NetworkManager networkManager , Socket socket) {
+        this.networkManager = networkManager;
         this.socket = socket;
         initSocketOutputWriter(socket);
     }
@@ -58,7 +58,7 @@ public class ManagerRequestHandler extends Thread {
                         break;
 
                     case "READY_FOR_ROUTING":
-                        this.manager.incrementNumOfReadyForRoutingRouters();
+                        this.networkManager.incrementNumOfReadyForRoutingRouters();
                         break;
 
                 }
@@ -87,13 +87,13 @@ public class ManagerRequestHandler extends Thread {
         logM("Received Ready Signal from router %d." , routerId);
         reader.readLine();
         reader.readLine();
-        manager.incrementReadyRouterCount();
+        networkManager.incrementReadyRouterCount();
     }
 
     private void handleUdpPortRequest(BufferedReader reader) throws IOException {
         int udpPort = Integer.parseInt(reader.readLine());
-        routerId = manager.getConfig().findRouter(udpPort);
-        List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
+        routerId = networkManager.getConfig().findRouter(udpPort);
+        List<Connectivity> routerNeighbors = networkManager.getConfig().getRouterNeighbors(routerId);
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
         logM("UDP Port %d Received from Router %d." , udpPort , routerId);

@@ -3,6 +3,7 @@ package main.core;
 import main.handlers.RouterRequestHandler;
 import main.handlers.UdpRequestHandler;
 import main.model.Connectivity;
+import main.model.LSP;
 import main.model.RouterInfo;
 
 import java.io.IOException;
@@ -14,18 +15,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static main.log.LogManager.logR;
 
 public class Router extends Thread {
-    private int routerId;
-    private RouterInfo info;
-    private List<Connectivity> neighbors;
+    private final int routerId;
+    private final RouterInfo info;
+    private RouterManager routerManager;
     private Socket managerSocket;
     private UdpRequestHandler udpRequestHandler;
     private RouterRequestHandler routerRequestHandler;
-    private AtomicInteger acksFromNeighbors;
+    private final AtomicInteger acksFromNeighbors;
 
     public Router(int routerId, RouterInfo info) {
         this.routerId = routerId;
         this.info = info;
-        neighbors = new ArrayList<>();
+        routerManager = new RouterManager();
         acksFromNeighbors = new AtomicInteger();
 
         // TODO: 6/24/2021 init sockets
@@ -62,7 +63,7 @@ public class Router extends Thread {
     }
 
     public void addNeighbors(Connectivity neighbor) {
-        this.neighbors.add(neighbor);
+        routerManager.addNeighbors(neighbor);
 
     }
 
@@ -79,11 +80,11 @@ public class Router extends Thread {
     }
 
     public int getNumberOfNeighbors(){
-        return this.neighbors.size();
+        return routerManager.getNumberOfNeighbors();
     }
 
     public List<Connectivity> getNeighbors() {
-        return neighbors;
+        return routerManager.getNeighbors();
     }
 
     public UdpRequestHandler getUdpRequestHandler() {
@@ -92,12 +93,20 @@ public class Router extends Thread {
 
     public String getNeighborIds(){
         StringBuilder stringBuilder = new StringBuilder();
-        for (Connectivity neighbor : this.neighbors) {
+        for (Connectivity neighbor : getNeighbors()) {
             stringBuilder.append(neighbor.getId());
             stringBuilder.append(" ");
         }
 
         return stringBuilder.toString();
+    }
+
+    public void sendLSP() {
+        udpRequestHandler.sendLSP();
+    }
+
+    public void addLSPToDB(LSP lsp) {
+        routerManager.addLSP(lsp);
     }
 }
 

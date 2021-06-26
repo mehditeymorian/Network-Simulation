@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static main.log.LogManager.logM;
 
 
-public class Manager extends Thread {
+public class NetworkManager extends Thread {
     private final NetworkConfig config;
     private ServerSocket serverSocket;
     private final AtomicBoolean safeSent;
@@ -24,7 +24,7 @@ public class Manager extends Thread {
     private final AtomicInteger ackedRoutersCount;
 
 
-    public Manager(String fileName) {
+    public NetworkManager(String fileName) {
         config = new NetworkConfig(fileName);
         handlers = new ArrayList<>();
         safeSent = new AtomicBoolean();

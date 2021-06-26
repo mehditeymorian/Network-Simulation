@@ -1,14 +1,19 @@
 package main.handlers;
 
-import main.Main;
 import main.core.Router;
 import main.log.LogManager;
 import main.model.Connectivity;
+import main.model.LSP;
 import main.utils.UdpDataBuilder;
 import main.utils.Utility;
 
 import java.io.IOException;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import static main.log.LogManager.logR;
 
 public class UdpRequestHandler extends Thread {
     private Router router;
@@ -41,7 +46,7 @@ public class UdpRequestHandler extends Thread {
                     handleReceivedAck();
                     break;
                 case "LSP":
-
+                    handleLSP(receivedData);
                     break;
                 case "ROUTING":
 
@@ -51,8 +56,22 @@ public class UdpRequestHandler extends Thread {
         }
     }
 
+    private void handleLSP(String[] receivedData) {
+        int id = Integer.parseInt(receivedData[1]);
+        long time = Long.parseLong(receivedData[2]);
+        List<int[]> neighbors = new ArrayList<>();
+        for (int i = 3; i < receivedData.length-1; i++) {
+            String[] line = receivedData[i].split(" ");
+            int[] each = {Integer.parseInt(line[0]) , Integer.parseInt(line[1])};
+            neighbors.add(each);
+        }
+        LSP lsp = new LSP(id , time , neighbors);
+        router.addLSPToDB(lsp);
+        logR(router.getRouterId() , "Receive LSP from Router %d." , id);
+    }
+
     private void handleCheckConnection(String udpPort,String routerId) {
-        LogManager.logR(router.getRouterId() , "Received CHECK_CONNECTION Signal from Router %s.", routerId);
+        logR(router.getRouterId() , "Received CHECK_CONNECTION Signal from Router %s.", routerId);
         String response = UdpDataBuilder.forAction("ACK").build();
         sendPacket(response, Integer.parseInt(udpPort));
     }
@@ -99,6 +118,22 @@ public class UdpRequestHandler extends Thread {
                 .build();
         for (Connectivity neighbor : this.router.getNeighbors()) {
             sendPacket(packet, neighbor.getInfo().getUdpPort());
+        }
+    }
+
+    // send lsp to neighbors
+    public void sendLSP() {
+        UdpDataBuilder lsp = UdpDataBuilder.forAction("LSP")
+                .append(String.valueOf(router.getRouterId()))
+                .append(String.valueOf(new Date().getTime()));
+
+        for (Connectivity neighbor : router.getNeighbors()) {
+            lsp.append(String.format("%d %d" , neighbor.getId() , neighbor.getDistance()));
+        }
+
+        String lspStr = lsp.build();
+        for (Connectivity neighbor : router.getNeighbors()) {
+            sendPacket(lspStr,neighbor.getInfo().getUdpPort());
         }
     }
 

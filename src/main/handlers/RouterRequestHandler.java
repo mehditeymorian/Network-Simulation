@@ -1,14 +1,14 @@
 package main.handlers;
 
-import main.Main;
 import main.core.Router;
-import main.log.LogManager;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.stream.Collectors;
 
 import static main.log.LogManager.logR;
 
@@ -17,7 +17,7 @@ public class RouterRequestHandler extends Thread {
     private OutputStreamWriter writer;
     private Router router;
 
-    public RouterRequestHandler(Router router, Socket socket) {
+    public RouterRequestHandler(Router router , Socket socket) {
         this.socket = socket;
         this.router = router;
         initSocketOutputWriter(socket);
@@ -48,6 +48,7 @@ public class RouterRequestHandler extends Thread {
 
                     case "NETWORK_READY":
                         logR(router.getRouterId() , "Received Network Ready Signal.");
+                        router.sendLSP();
                         break;
                 }
 
@@ -71,11 +72,11 @@ public class RouterRequestHandler extends Thread {
             int routerId = Integer.parseInt(reader.readLine());
             int routerDistance = Integer.parseInt(reader.readLine());
             String[] connectionDetails = reader.readLine().split(" ");
-            RouterInfo routerInfo = new RouterInfo(Integer.parseInt(connectionDetails[0]),
-                    connectionDetails[1],
+            RouterInfo routerInfo = new RouterInfo(Integer.parseInt(connectionDetails[0]) ,
+                    connectionDetails[1] ,
                     Integer.parseInt(connectionDetails[2]));
 
-            Connectivity neighbor = new Connectivity(routerId, routerInfo, routerDistance);
+            Connectivity neighbor = new Connectivity(routerId , routerInfo , routerDistance);
             this.router.addNeighbors(neighbor);
 
         }
