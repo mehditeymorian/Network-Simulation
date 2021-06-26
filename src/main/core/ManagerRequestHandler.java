@@ -16,9 +16,6 @@ public class ManagerRequestHandler extends Thread {
     private Socket socket;
     private int routerId;
     private OutputStreamWriter writer;
-    public Semaphore safeSem;
-    private boolean isReadyReceived = false;
-    private boolean isSafeSent = false;
 
 
     public static ManagerRequestHandler handle(Manager manager, Socket socket) {
@@ -30,7 +27,6 @@ public class ManagerRequestHandler extends Thread {
     private ManagerRequestHandler(Manager manager, Socket socket) {
         this.manager = manager;
         this.socket = socket;
-        safeSem = new Semaphore(0);
         initSocketOutputWriter(socket);
     }
 
@@ -65,15 +61,9 @@ public class ManagerRequestHandler extends Thread {
 
                 }
 
-                if (isReadyReceived && !isSafeSent) {
-                    safeSem.acquire();
-//                    Main.logger.info("Network is ready.");
-                    sendSafeMessage();
-                    isSafeSent = true;
-                }
 
             }
-        } catch (IOException | InterruptedException e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
     }
@@ -96,9 +86,6 @@ public class ManagerRequestHandler extends Thread {
         reader.readLine();
         reader.readLine();
         manager.incrementReadyRouterCount();
-        isReadyReceived = true;
-
-        // TODO: 6/24/2021 log
     }
 
     private void handleUdpPortRequest(BufferedReader reader) throws IOException {
@@ -133,13 +120,17 @@ public class ManagerRequestHandler extends Thread {
         writer.flush();
     }
 
-    private void sendSafeMessage() throws IOException {
+    public void sendSafeMessage() {
         Main.logger.info("Manager: Sending Safe signal");
-        writer.write("SAFE");
-        crlf();
-        crlf();
-        crlf();
-        writer.flush();
+        try {
+            writer.write("SAFE");
+            crlf();
+            crlf();
+            crlf();
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     private void crlf() throws IOException {

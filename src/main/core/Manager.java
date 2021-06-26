@@ -1,6 +1,8 @@
 package main.core;
 
 
+import main.Main;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -13,15 +15,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class Manager extends Thread {
     private final NetworkConfig config;
     private ServerSocket serverSocket;
+    private final AtomicBoolean safeSent;
     private final AtomicInteger readyRoutersCount;
     private final List<ManagerRequestHandler> handlers;
-    private AtomicBoolean networkReadySent;
-    private AtomicInteger ackedRoutersCount;
+    private final AtomicBoolean networkReadySent;
+    private final AtomicInteger ackedRoutersCount;
 
 
     public Manager(String fileName) {
         config = new NetworkConfig(fileName);
         handlers = new ArrayList<>();
+        safeSent = new AtomicBoolean();
         readyRoutersCount = new AtomicInteger();
         networkReadySent = new AtomicBoolean();
         ackedRoutersCount = new AtomicInteger();
@@ -69,10 +73,17 @@ public class Manager extends Thread {
     }
 
     public void incrementReadyRouterCount() {
-        int i = readyRoutersCount.incrementAndGet();
-        if (i == config.getSize())
-            for (ManagerRequestHandler handler : handlers)
-                handler.safeSem.release();
+        if (safeSent.get()) return;
+        synchronized (this){
+            if(safeSent.get()) return;
+            if (readyRoutersCount.incrementAndGet() == config.getSize()) { // all routers are acked
+                safeSent.set(true);
+                Main.logger.info("Manager: Network is Safe");
+                for (ManagerRequestHandler handler : handlers) {
+                    handler.sendSafeMessage();
+                }
+            }
+        }
     }
 
     public void incrementNumOfReadyForRoutingRouters() throws IOException {
