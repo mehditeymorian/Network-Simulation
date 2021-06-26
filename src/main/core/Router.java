@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class Router extends Thread {
     private int routerId;
@@ -16,11 +17,13 @@ public class Router extends Thread {
     private Socket managerSocket;
     private UdpRequestHandler udpRequestHandler;
     private RouterRequestHandler routerRequestHandler;
+    private AtomicInteger acksFromNeighbors;
 
     public Router(int routerId, RouterInfo info) {
         this.routerId = routerId;
         this.info = info;
         neighbors = new ArrayList<>();
+        acksFromNeighbors = new AtomicInteger();
 
         // TODO: 6/24/2021 init sockets
 
@@ -29,13 +32,14 @@ public class Router extends Thread {
     @Override
     public synchronized void start() {
         super.start();
-        Main.logger.info("Router started");
+        Main.logger.info(String.format("Router: Router %s started" , this.getRouterId()));
         try {
             managerSocket = new Socket(info.getTcpAddress(), NetworkConfig.MANAGER_TCP_PORT);
             udpRequestHandler = new UdpRequestHandler(this);
             routerRequestHandler = new RouterRequestHandler(this, managerSocket);
             routerRequestHandler.start();
             routerRequestHandler.sendUdpPort();
+            udpRequestHandler.start();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -66,4 +70,39 @@ public class Router extends Thread {
         this.neighbors.add(neighbor);
 
     }
+
+    public void incrementAcksFromNeighbors(){
+        acksFromNeighbors.incrementAndGet();
+        if (acksFromNeighbors.get() == getNumberOfNeighbors()) {
+            try {
+                Main.logger.info(String.format("router %d all acks received from neighbors",getRouterId()));
+                routerRequestHandler.sendReadyForRoutingSignal();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public int getNumberOfNeighbors(){
+        return this.neighbors.size();
+    }
+
+    public List<Connectivity> getNeighbors() {
+        return neighbors;
+    }
+
+    public UdpRequestHandler getUdpRequestHandler() {
+        return udpRequestHandler;
+    }
+
+    public String getNeighborIds(){
+        StringBuilder stringBuilder = new StringBuilder();
+        for (Connectivity neighbor : this.neighbors) {
+            stringBuilder.append(neighbor.getId());
+            stringBuilder.append(" ");
+        }
+
+        return stringBuilder.toString();
+    }
 }
+

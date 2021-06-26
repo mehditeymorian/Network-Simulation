@@ -39,12 +39,29 @@ public class RouterRequestHandler extends Thread {
                         break;
                     case "SAFE":
                         handleSafe();
+                        break;
+
+                    case "NETWORK_READY":
+                        handleNetworkReady();
+                        break;
                 }
+
             }
 
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleNetworkReady() {
+        Main.logger.info(String.format("Router: Router %s received Network Ready signal", this.router.getRouterId()));
+    }
+
+    public void sendReadyForRoutingSignal() throws IOException {
+        writer.write("READY_FOR_ROUTING");
+        crlf();
+        crlf();
+        writer.flush();
     }
 
     private void handleConnectivityTable(BufferedReader reader) throws IOException {
@@ -62,7 +79,7 @@ public class RouterRequestHandler extends Thread {
 
         }
 
-        Main.logger.info(String.format("Router %s connectivity table updated" , this.router.getRouterId()));
+        Main.logger.info(String.format("Router: Router %s's neighbors are: %s" , this.router.getRouterId() , this.router.getNeighborIds()));
 
     }
 
@@ -75,8 +92,8 @@ public class RouterRequestHandler extends Thread {
     }
 
 
-
     public void sendUdpPort() throws IOException {
+        Main.logger.info(String.format("Router: Sending router %s udp port to manager", this.router.getRouterId()));
         writer.write("UDP_PORT");
         crlf();
         writer.write(this.router.getInfo().getUdpPort() + "");
@@ -86,7 +103,8 @@ public class RouterRequestHandler extends Thread {
     }
 
     private void handleSafe() throws IOException {
-        Main.logger.info(String.format("Router %s Received safe signal" , router.getRouterId()));
+        Main.logger.info(String.format("Router: Router %s Received safe signal" , router.getRouterId()));
+        this.router.getUdpRequestHandler().sendCheckingConnectionSignal();
     }
 
     private void crlf() throws IOException {

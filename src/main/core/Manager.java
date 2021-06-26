@@ -1,27 +1,30 @@
 package main.core;
 
 
-import main.Main;
-
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
 public class Manager extends Thread {
     private final NetworkConfig config;
     private ServerSocket serverSocket;
-    private final AtomicInteger readRouters;
+    private final AtomicInteger readyRoutersCount;
     private final List<ManagerRequestHandler> handlers;
+    private AtomicBoolean networkReadySent;
+    private AtomicInteger ackedRoutersCount;
 
 
     public Manager(String fileName) {
         config = new NetworkConfig(fileName);
         handlers = new ArrayList<>();
-        readRouters = new AtomicInteger();
+        readyRoutersCount = new AtomicInteger();
+        networkReadySent = new AtomicBoolean();
+        ackedRoutersCount = new AtomicInteger();
         initServerSocket();
         // TODO: 6/24/2021 init socket
 
@@ -48,7 +51,6 @@ public class Manager extends Thread {
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
-//        Main.logger.info("Manager started");
         while (true) {
             try {
                 Socket tcp = serverSocket.accept();
@@ -57,6 +59,7 @@ public class Manager extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
+            
 
         }
     }
@@ -66,9 +69,23 @@ public class Manager extends Thread {
     }
 
     public void incrementReadyRouterCount() {
-        int i = readRouters.incrementAndGet();
+        int i = readyRoutersCount.incrementAndGet();
         if (i == config.getSize())
             for (ManagerRequestHandler handler : handlers)
                 handler.safeSem.release();
     }
+
+    public void incrementNumOfReadyForRoutingRouters() throws IOException {
+        if (networkReadySent.get()) return;
+        synchronized (this){
+            if(networkReadySent.get()) return;
+            if (ackedRoutersCount.incrementAndGet() == config.getSize()) { // all routers are acked
+                networkReadySent.set(true);
+                for (ManagerRequestHandler handler : handlers) {
+                    handler.sendNetworkReady();
+                }
+            }
+        }
+    }
+
 }
