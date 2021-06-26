@@ -1,6 +1,7 @@
-package main.core;
+package main.handlers;
 
 import main.Main;
+import main.core.Router;
 import main.log.LogManager;
 import main.model.Connectivity;
 import main.model.RouterInfo;

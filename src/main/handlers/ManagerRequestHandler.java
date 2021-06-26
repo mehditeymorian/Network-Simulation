@@ -1,6 +1,7 @@
-package main.core;
+package main.handlers;
 
 
+import main.core.Manager;
 import main.model.Connectivity;
 
 import java.io.BufferedReader;

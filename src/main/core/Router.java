@@ -1,7 +1,7 @@
 package main.core;
 
-import main.Main;
-import main.log.LogManager;
+import main.handlers.RouterRequestHandler;
+import main.handlers.UdpRequestHandler;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
@@ -11,7 +11,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static main.log.LogManager.logC;
 import static main.log.LogManager.logR;
 
 public class Router extends Thread {

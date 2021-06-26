@@ -1,8 +1,7 @@
 package main.core;
 
 
-import main.Main;
-import main.log.LogManager;
+import main.handlers.ManagerRequestHandler;
 
 import java.io.IOException;
 import java.net.ServerSocket;
