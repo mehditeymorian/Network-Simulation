@@ -1,6 +1,7 @@
 package main.core;
 
 import main.Main;
+import main.log.LogManager;
 import main.model.Connectivity;
 import main.utils.UdpDataBuilder;
 import main.utils.Utility;
@@ -33,9 +34,7 @@ public class UdpRequestHandler extends Thread {
             String[] receivedData = receivePacket().split("\n");
             switch (receivedData[0]) {
                 case "CHECK_CONNECTION":
-                    Main.logger.info(String.format("Router: Router %s received CHECK_CONNECTION signal from %s", this.router.getRouterId(), receivedData[1]));
-                    String response = UdpDataBuilder.forAction("ACK").build();
-                    sendPacket(response, Integer.parseInt(receivedData[1]));
+                    handleCheckConnection(receivedData[1],receivedData[2]);
                     break;
                 case "ACK":
                     handleReceivedAck();
@@ -49,6 +48,12 @@ public class UdpRequestHandler extends Thread {
             }
 
         }
+    }
+
+    private void handleCheckConnection(String udpPort,String routerId) {
+        LogManager.logR(router.getRouterId() , "Received CHECK_CONNECTION Signal from Router %s.", routerId);
+        String response = UdpDataBuilder.forAction("ACK").build();
+        sendPacket(response, Integer.parseInt(udpPort));
     }
 
     private void handleReceivedAck() {
@@ -87,8 +92,10 @@ public class UdpRequestHandler extends Thread {
     }
 
     public void sendCheckingConnectionSignal() {
-        Main.logger.info(String.format("Router: Router %s (%s) is sending CHECK_CONNECTION signal to %s" , this.router.getRouterId() , this.router.getInfo().getUdpPort() , this.router.getNeighborIds()));
-        String packet = UdpDataBuilder.forAction("CHECK_CONNECTION").append(String.valueOf(this.router.getInfo().getUdpPort())).build();
+        String packet = UdpDataBuilder.forAction("CHECK_CONNECTION")
+                .append(String.valueOf(this.router.getInfo().getUdpPort()))
+                .append(String.valueOf(router.getRouterId()))
+                .build();
         for (Connectivity neighbor : this.router.getNeighbors()) {
             sendPacket(packet, neighbor.getInfo().getUdpPort());
         }

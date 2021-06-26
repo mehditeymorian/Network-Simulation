@@ -1,6 +1,7 @@
 package main.core;
 
 import main.Main;
+import main.log.LogManager;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
@@ -16,6 +17,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static main.log.LogManager.logC;
+
 public class NetworkConfig {
     public static final int MANAGER_TCP_PORT = 9000;
     private final String tcpAddress = "localhost";
@@ -30,7 +33,9 @@ public class NetworkConfig {
         this.fileName = fileName;
         routers = new ArrayList<>();
         try {
+            logC("Reading Configuration...");
             readConfigFile();
+            logC("Configuration Read Successfully.");
         } catch (URISyntaxException | IOException e) {
             e.printStackTrace();
         }

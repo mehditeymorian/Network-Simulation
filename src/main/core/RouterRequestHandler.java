@@ -1,11 +1,15 @@
 package main.core;
 
 import main.Main;
+import main.log.LogManager;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.stream.Collectors;
+
+import static main.log.LogManager.logR;
 
 public class RouterRequestHandler extends Thread {
     private Socket socket;
@@ -42,7 +46,7 @@ public class RouterRequestHandler extends Thread {
                         break;
 
                     case "NETWORK_READY":
-                        handleNetworkReady();
+                        logR(router.getRouterId() , "Received Network Ready Signal.");
                         break;
                 }
 
@@ -51,10 +55,6 @@ public class RouterRequestHandler extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
-
-    private void handleNetworkReady() {
-        Main.logger.info(String.format("Router: Router %s received Network Ready signal", this.router.getRouterId()));
     }
 
     public void sendReadyForRoutingSignal() throws IOException {
@@ -79,8 +79,7 @@ public class RouterRequestHandler extends Thread {
 
         }
 
-        Main.logger.info(String.format("Router: Router %s's neighbors are: %s" , this.router.getRouterId() , this.router.getNeighborIds()));
-
+        logR(router.getRouterId() , "Connectivity Table Received. Neighbors-Ids: %s." , router.getNeighborIds());
     }
 
     private void sendReadySignal() throws IOException {
@@ -91,9 +90,7 @@ public class RouterRequestHandler extends Thread {
         writer.flush();
     }
 
-
     public void sendUdpPort() throws IOException {
-        Main.logger.info(String.format("Router: Sending router %s udp port to manager", this.router.getRouterId()));
         writer.write("UDP_PORT");
         crlf();
         writer.write(this.router.getInfo().getUdpPort() + "");
@@ -103,7 +100,7 @@ public class RouterRequestHandler extends Thread {
     }
 
     private void handleSafe() throws IOException {
-        Main.logger.info(String.format("Router: Router %s Received safe signal" , router.getRouterId()));
+        logR(router.getRouterId() , "Received Safe Signal.");
         this.router.getUdpRequestHandler().sendCheckingConnectionSignal();
     }
 

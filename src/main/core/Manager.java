@@ -2,6 +2,7 @@ package main.core;
 
 
 import main.Main;
+import main.log.LogManager;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -10,6 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static main.log.LogManager.logM;
 
 
 public class Manager extends Thread {
@@ -30,13 +33,11 @@ public class Manager extends Thread {
         networkReadySent = new AtomicBoolean();
         ackedRoutersCount = new AtomicInteger();
         initServerSocket();
-        // TODO: 6/24/2021 init socket
-
-
     }
 
     private void initServerSocket() {
         try {
+            logM("Listen on port %d",NetworkConfig.MANAGER_TCP_PORT);
             serverSocket = new ServerSocket(NetworkConfig.MANAGER_TCP_PORT);
         } catch (IOException e) {
             e.printStackTrace();
@@ -78,7 +79,7 @@ public class Manager extends Thread {
             if(safeSent.get()) return;
             if (readyRoutersCount.incrementAndGet() == config.getSize()) { // all routers are acked
                 safeSent.set(true);
-                Main.logger.info("Manager: Network is Safe");
+                logM("Network is Safe.");
                 for (ManagerRequestHandler handler : handlers) {
                     handler.sendSafeMessage();
                 }
@@ -92,6 +93,7 @@ public class Manager extends Thread {
             if(networkReadySent.get()) return;
             if (ackedRoutersCount.incrementAndGet() == config.getSize()) { // all routers are acked
                 networkReadySent.set(true);
+                logM("Network is Ready.");
                 for (ManagerRequestHandler handler : handlers) {
                     handler.sendNetworkReady();
                 }

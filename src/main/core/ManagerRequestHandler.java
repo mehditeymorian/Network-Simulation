@@ -1,6 +1,6 @@
 package main.core;
 
-import main.Main;
+
 import main.model.Connectivity;
 
 import java.io.BufferedReader;
@@ -9,7 +9,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.List;
-import java.util.concurrent.Semaphore;
+
+import static main.log.LogManager.logM;
 
 public class ManagerRequestHandler extends Thread {
     private Manager manager;
@@ -76,13 +77,13 @@ public class ManagerRequestHandler extends Thread {
     }
 
     private void handleAckRequest(BufferedReader reader) throws IOException {
-//        Main.logger.info("Ack received");
+        logM("Received Ack Signal from router %d." , routerId);
         reader.readLine();
         reader.readLine();
     }
 
     private void handleReadyRequest(BufferedReader reader) throws IOException {
-        Main.logger.info("Manager: Ready signal received");
+        logM("Received Ready Signal from router %d." , routerId);
         reader.readLine();
         reader.readLine();
         manager.incrementReadyRouterCount();
@@ -90,13 +91,11 @@ public class ManagerRequestHandler extends Thread {
 
     private void handleUdpPortRequest(BufferedReader reader) throws IOException {
         int udpPort = Integer.parseInt(reader.readLine());
-        Main.logger.info(String.format("Manager: Received router %s udp port" , udpPort));
         routerId = manager.getConfig().findRouter(udpPort);
         List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
-//        Main.logger.info(String.format("Manager: Neighbors of router %s are %s" , routerId , routerNeighbors));
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
-//        Main.logger.info(String.format("%s udp port received", routerId));
+        logM("UDP Port %d Received from Router %d." , udpPort , routerId);
     }
 
     private void sendRouterNeighbors(List<Connectivity> routerNeighbors) throws IOException {
@@ -121,7 +120,6 @@ public class ManagerRequestHandler extends Thread {
     }
 
     public void sendSafeMessage() {
-        Main.logger.info("Manager: Sending Safe signal");
         try {
             writer.write("SAFE");
             crlf();

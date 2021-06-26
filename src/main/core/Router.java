@@ -1,6 +1,7 @@
 package main.core;
 
 import main.Main;
+import main.log.LogManager;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
@@ -9,6 +10,9 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static main.log.LogManager.logC;
+import static main.log.LogManager.logR;
 
 public class Router extends Thread {
     private int routerId;
@@ -32,7 +36,7 @@ public class Router extends Thread {
     @Override
     public synchronized void start() {
         super.start();
-        Main.logger.info(String.format("Router: Router %s started" , this.getRouterId()));
+        logR(routerId,"Started Working.");
         try {
             managerSocket = new Socket(info.getTcpAddress(), NetworkConfig.MANAGER_TCP_PORT);
             udpRequestHandler = new UdpRequestHandler(this);
@@ -54,14 +58,6 @@ public class Router extends Thread {
         return info;
     }
 
-    public void setNeighbors(List<Connectivity> neighbors) {
-        this.neighbors = neighbors;
-    }
-
-    public String getRouterName() {
-        return String.format("main.core.Router %d\n", getRouterId());
-    }
-
     public int getRouterId() {
         return routerId;
     }
@@ -75,7 +71,7 @@ public class Router extends Thread {
         acksFromNeighbors.incrementAndGet();
         if (acksFromNeighbors.get() == getNumberOfNeighbors()) {
             try {
-                Main.logger.info(String.format("router %d all acks received from neighbors",getRouterId()));
+                logR(routerId,"All ACKS Received from Neighbors.");
                 routerRequestHandler.sendReadyForRoutingSignal();
             } catch (IOException e) {
                 e.printStackTrace();
