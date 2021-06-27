@@ -58,7 +58,7 @@ public class ManagerRequestHandler extends Thread {
                         break;
 
                     case "READY_FOR_ROUTING":
-                        this.networkManager.incrementNumOfReadyForRoutingRouters();
+                        this.networkManager.incrementAckedRouterCount();
                         break;
 
                 }
@@ -73,6 +73,7 @@ public class ManagerRequestHandler extends Thread {
     public void sendNetworkReady() throws IOException {
         writer.write("NETWORK_READY");
         crlf();
+        writer.write(String.valueOf(networkManager.getConfig().getSize()));
         crlf();
         writer.flush();
     }

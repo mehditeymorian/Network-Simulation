@@ -122,7 +122,7 @@ public class UdpRequestHandler extends Thread {
     }
 
     // send lsp to neighbors
-    public void sendLSP() {
+    public void startFlooding() {
         UdpDataBuilder lsp = UdpDataBuilder.forAction("LSP")
                 .append(String.valueOf(router.getRouterId()))
                 .append(String.valueOf(new Date().getTime()));

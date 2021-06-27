@@ -86,7 +86,7 @@ public class NetworkManager extends Thread {
         }
     }
 
-    public void incrementNumOfReadyForRoutingRouters() throws IOException {
+    public void incrementAckedRouterCount() throws IOException {
         if (networkReadySent.get()) return;
         synchronized (this){
             if(networkReadySent.get()) return;

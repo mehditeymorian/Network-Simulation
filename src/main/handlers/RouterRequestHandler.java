@@ -48,7 +48,9 @@ public class RouterRequestHandler extends Thread {
 
                     case "NETWORK_READY":
                         logR(router.getRouterId() , "Received Network Ready Signal.");
-                        router.sendLSP();
+                        int networkSize = Integer.parseInt(reader.readLine());
+                        router.setNetworkSize(networkSize);
+                        router.startFlooding();
                         break;
                 }
 

@@ -8,9 +8,9 @@ import main.model.RouterInfo;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static main.log.LogManager.logR;
 
@@ -26,7 +26,7 @@ public class Router extends Thread {
     public Router(int routerId, RouterInfo info) {
         this.routerId = routerId;
         this.info = info;
-        routerManager = new RouterManager();
+        routerManager = new RouterManager(routerId);
         acksFromNeighbors = new AtomicInteger();
 
         // TODO: 6/24/2021 init sockets
@@ -101,12 +101,23 @@ public class Router extends Thread {
         return stringBuilder.toString();
     }
 
-    public void sendLSP() {
-        udpRequestHandler.sendLSP();
+    public void startFlooding() {
+        // add current lsp
+        int id = getRouterId();
+        int distance = 0;
+        List<int[]> neighbors = routerManager.getNeighbors().stream().map(each -> new int[]{each.getId(),each.getDistance()}).collect(Collectors.toList());
+        LSP selfLSP = new LSP(id , distance , neighbors);
+        addLSPToDB(selfLSP);
+
+        udpRequestHandler.startFlooding();
     }
 
     public void addLSPToDB(LSP lsp) {
         routerManager.addLSP(lsp);
+    }
+
+    public void setNetworkSize(int networkSize) {
+        routerManager.setNetworkSize(networkSize);
     }
 }
 
