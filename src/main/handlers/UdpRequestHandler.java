@@ -49,10 +49,29 @@ public class UdpRequestHandler extends Thread {
                     handleLSP(receivedData);
                     break;
                 case "ROUTING":
-
+                    handleRouting(receivedData);
                     break;
             }
 
+        }
+    }
+
+    private void handleRouting(String[] receivedData) {
+        String[] locations = receivedData[1].split(" ");
+        int src = Integer.parseInt(locations[0]);
+        int destination = Integer.parseInt(locations[1]);
+        String path = receivedData[3];
+        if (destination == router.getRouterId()) { // current router is destination
+            long time = System.currentTimeMillis() - Long.parseLong(receivedData[2]);
+            logR(router.getRouterId() , "I Got my Packet :) From: %d, Took: %dms, Path %s %d.",src,time,path,router.getRouterId());
+        }else {
+            String packetData = UdpDataBuilder.forAction("ROUTING")
+                    .append(receivedData[1])
+                    .append(receivedData[2])
+                    .append(receivedData[3] + " " + router.getRouterId())
+                    .build();
+            router.forwardPacket(packetData,destination);
+            logR(router.getRouterId() , "Forwarding Packet. Src: %d Destination: %d.",src,destination);
         }
     }
 

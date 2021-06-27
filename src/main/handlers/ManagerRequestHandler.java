@@ -56,11 +56,9 @@ public class ManagerRequestHandler extends Thread {
                     case "ACK":
                         handleAckRequest(reader);
                         break;
-
                     case "READY_FOR_ROUTING":
                         this.networkManager.incrementAckedRouterCount();
                         break;
-
                 }
 
 
@@ -68,6 +66,19 @@ public class ManagerRequestHandler extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void routePacket(int destination) {
+        try {
+            writer.write("ROUTING");
+            crlf();
+            writer.write(String.format("%d %d" , routerId , destination));
+            crlf();
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     public void sendNetworkReady() throws IOException {
@@ -135,5 +146,9 @@ public class ManagerRequestHandler extends Thread {
 
     private void crlf() throws IOException {
         writer.write("\r\n");
+    }
+
+    public int getRouterId() {
+        return routerId;
     }
 }

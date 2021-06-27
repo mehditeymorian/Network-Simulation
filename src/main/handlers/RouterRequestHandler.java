@@ -52,6 +52,9 @@ public class RouterRequestHandler extends Thread {
                         router.setNetworkSize(networkSize);
                         router.startFlooding();
                         break;
+                    case "ROUTING":
+                        handleRouting(reader);
+                        break;
                 }
 
             }
@@ -59,6 +62,23 @@ public class RouterRequestHandler extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleRouting(BufferedReader reader) throws IOException {
+        String[] line = reader.readLine().split(" ");
+        int start;
+        int end;
+        try {
+             start = Integer.parseInt(line[0]);
+             end = Integer.parseInt(line[1]);
+        } catch (NumberFormatException e) {
+            line = reader.readLine().split(" ");
+             start = Integer.parseInt(line[0]);
+             end = Integer.parseInt(line[1]);
+        }
+
+        router.startRouting(start , end);
+        logR(router.getRouterId() , "Received Routing Packet From Manager. Destination: Router %d." , end);
     }
 
     public void sendReadyForRoutingSignal() throws IOException {
