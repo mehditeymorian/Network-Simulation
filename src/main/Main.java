@@ -14,7 +14,7 @@ public class Main {
     public static void main(String[] args) throws IOException {
         init();
         logC("Starting Manager");
-        String fileName = "main/config.txt";
+        String fileName = "main/config2.txt";
         NetworkManager networkManager = new NetworkManager(fileName);
         networkManager.start();
         System.out.println(networkManager);

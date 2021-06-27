@@ -65,7 +65,7 @@ public class RouterManager {
                 }
             }
         }
-        // TODO: 6/27/2021 add log
+        LogManager.logForwardingTable(routerId,forwardingTable);
     }
 
     private void initForwardingTable() {
