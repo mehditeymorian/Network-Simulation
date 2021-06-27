@@ -5,6 +5,7 @@ import main.handlers.UdpRequestHandler;
 import main.model.Connectivity;
 import main.model.LSP;
 import main.model.RouterInfo;
+import main.utils.UdpDataBuilder;
 
 import java.io.IOException;
 import java.net.Socket;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 import static main.log.LogManager.logR;
 
 public class Router extends Thread {
+    public static final int FORWARDING_DELAY = 100;
     private final int routerId;
     private final RouterInfo info;
     private RouterManager routerManager;
@@ -118,6 +120,29 @@ public class Router extends Thread {
 
     public void setNetworkSize(int networkSize) {
         routerManager.setNetworkSize(networkSize);
+    }
+
+    public void startRouting(int src , int destination) {
+        int nextRouterId = routerManager.getNextRouterIdByDestination(destination);
+        int udpPort = routerManager.getUdpPortByRouterId(nextRouterId);
+        String packetData = UdpDataBuilder.forAction("ROUTING")
+                .append(String.format("%d %d" , src , destination))
+                .append(String.valueOf(System.currentTimeMillis()))
+                .append(String.valueOf(routerId))
+                .build();
+        udpRequestHandler.sendPacket(packetData, udpPort);
+    }
+
+    public void forwardPacket(String data , int destination) {
+        // creating an artificial delay to get a sense :)
+        try {
+            Thread.sleep(FORWARDING_DELAY);
+            int nextRouterId = routerManager.getNextRouterIdByDestination(destination);
+            int udpPort = routerManager.getUdpPortByRouterId(nextRouterId);
+            udpRequestHandler.sendPacket(data, udpPort);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
 

@@ -65,6 +65,7 @@ public class RouterManager {
                 }
             }
         }
+        LogManager.logR(routerId, "Forwarding Table Updated.");
         LogManager.logForwardingTable(routerId,forwardingTable);
     }
 
@@ -113,5 +114,18 @@ public class RouterManager {
 
     public void setNetworkSize(int networkSize) {
         this.networkSize = networkSize;
+    }
+
+    public int getNextRouterIdByDestination(int end) {
+        return forwardingTable[end][INTERFACE];
+    }
+
+    public int getUdpPortByRouterId(int nextRouterId) {
+        for (Connectivity neighbor : neighbors) {
+            if (neighbor.getId() == nextRouterId) {
+                return neighbor.getInfo().getUdpPort();
+            }
+        }
+        return -1;
     }
 }

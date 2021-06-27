@@ -8,6 +8,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,11 +24,14 @@ public class NetworkManager extends Thread {
     private final List<ManagerRequestHandler> handlers;
     private final AtomicBoolean networkReadySent;
     private final AtomicInteger ackedRoutersCount;
+    private int onlineRoutersCount;
+    private Semaphore routeInputSem;
 
 
     public NetworkManager(String fileName) {
         config = new NetworkConfig(fileName);
         handlers = new ArrayList<>();
+        routeInputSem = new Semaphore(0);
         safeSent = new AtomicBoolean();
         readyRoutersCount = new AtomicInteger();
         networkReadySent = new AtomicBoolean();
@@ -55,7 +60,7 @@ public class NetworkManager extends Thread {
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
-        while (true) {
+        while (++onlineRoutersCount <= config.getSize()) {
             try {
                 Socket tcp = serverSocket.accept();
                 ManagerRequestHandler handler = ManagerRequestHandler.handle(this , tcp);
@@ -63,8 +68,25 @@ public class NetworkManager extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            
+        }
 
+        inputRoutingCommands();
+    }
+
+    private void inputRoutingCommands() {
+        try {
+            routeInputSem.acquire();
+        } catch (InterruptedException ignored) {}
+
+        Scanner input = new Scanner(System.in);
+        System.out.println("Type Routing. Example:0 3 // routing from 0 to 3");
+        while (input.hasNextLine()) {
+            try {
+                String[] routing = input.nextLine().split(" ");
+                int src = Integer.parseInt(routing[0]);
+                int destination = Integer.parseInt(routing[1]);
+                routePacket(src,destination);
+            } catch (Exception ignored) {}
         }
     }
 
@@ -96,8 +118,26 @@ public class NetworkManager extends Thread {
                 for (ManagerRequestHandler handler : handlers) {
                     handler.sendNetworkReady();
                 }
+                releaseRouteInputSemaphore();
             }
         }
     }
 
+    private void releaseRouteInputSemaphore() {
+        try {
+            Thread.sleep(500);
+            routeInputSem.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void routePacket(int src , int destination) {
+        for (ManagerRequestHandler handler : handlers) {
+            if (handler.getRouterId() == src) {
+                handler.routePacket(destination);
+                break;
+            }
+        }
+    }
 }
