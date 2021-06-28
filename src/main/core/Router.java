@@ -144,5 +144,10 @@ public class Router extends Thread {
             e.printStackTrace();
         }
     }
+
+    public void kill() {
+        udpRequestHandler.kill();
+        logR(routerId, "Shutdown.");
+    }
 }
 

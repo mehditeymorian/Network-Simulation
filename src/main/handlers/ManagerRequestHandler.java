@@ -89,6 +89,18 @@ public class ManagerRequestHandler extends Thread {
         writer.flush();
     }
 
+    public void sendKillRequest() {
+        try {
+            writer.write("KILL");
+            crlf();
+            crlf();
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private void handleAckRequest(BufferedReader reader) throws IOException {
         logM("Received Ack Signal from router %d." , routerId);
         reader.readLine();

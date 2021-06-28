@@ -37,7 +37,10 @@ public class UdpRequestHandler extends Thread {
     @Override
     public void run() {
         while (true) {
-            String[] receivedData = receivePacket().split("\n");
+            String rawData = receivePacket();
+            if (rawData == null) // socket closed!
+                break;
+            String[] receivedData = rawData.split("\n");
             switch (receivedData[0]) {
                 case "CHECK_CONNECTION":
                     handleCheckConnection(receivedData[1],receivedData[2]);
@@ -124,7 +127,7 @@ public class UdpRequestHandler extends Thread {
         try {
             socket.receive(packet);
         } catch (IOException e) {
-            e.printStackTrace();
+            return null;
         }
         byte[] data = Utility.trimData(packet.getData());
         return new String(data);
@@ -156,5 +159,9 @@ public class UdpRequestHandler extends Thread {
         }
     }
 
+    public void kill() {
+        logR(router.getRouterId() , "Killing UDP Request Handler.");
+        socket.close();
+    }
 
 }

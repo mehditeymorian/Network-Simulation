@@ -25,13 +25,13 @@ public class NetworkManager extends Thread {
     private final AtomicBoolean networkReadySent;
     private final AtomicInteger ackedRoutersCount;
     private int onlineRoutersCount;
-    private Semaphore routeInputSem;
+    private Semaphore inputCommandsSem;
 
 
     public NetworkManager(String fileName) {
         config = new NetworkConfig(fileName);
         handlers = new ArrayList<>();
-        routeInputSem = new Semaphore(0);
+        inputCommandsSem = new Semaphore(0);
         safeSent = new AtomicBoolean();
         readyRoutersCount = new AtomicInteger();
         networkReadySent = new AtomicBoolean();
@@ -70,23 +70,39 @@ public class NetworkManager extends Thread {
             }
         }
 
-        inputRoutingCommands();
+        inputCommands();
     }
 
-    private void inputRoutingCommands() {
+    private void inputCommands() {
         try {
-            routeInputSem.acquire();
+            inputCommandsSem.acquire();
         } catch (InterruptedException ignored) {}
 
         Scanner input = new Scanner(System.in);
-        System.out.println("Type Routing. Example:0 3 // routing from 0 to 3");
+        System.out.println("Commands:");
+        System.out.println("\tRouting: Example:0 3 // routing from 0 to 3");
+        System.out.println("\tQuit: Example:quit 3 // remove router 3 from network");
         while (input.hasNextLine()) {
             try {
-                String[] routing = input.nextLine().split(" ");
-                int src = Integer.parseInt(routing[0]);
-                int destination = Integer.parseInt(routing[1]);
-                routePacket(src,destination);
+                String[] line = input.nextLine().toLowerCase().split(" ");
+                if (line[0].equals("quit")) {
+                    int routerId = Integer.parseInt(line[1]);
+                    killRouter(routerId);
+                }else {
+                    int src = Integer.parseInt(line[0]);
+                    int destination = Integer.parseInt(line[1]);
+                    routePacket(src,destination);
+                }
             } catch (Exception ignored) {}
+        }
+    }
+
+    private void killRouter(int routerId) {
+        for (ManagerRequestHandler handler : handlers) {
+            if (handler.getRouterId() == routerId) {
+                handler.sendKillRequest();
+                break;
+            }
         }
     }
 
@@ -118,15 +134,15 @@ public class NetworkManager extends Thread {
                 for (ManagerRequestHandler handler : handlers) {
                     handler.sendNetworkReady();
                 }
-                releaseRouteInputSemaphore();
+                releaseInputCommandsSemaphore();
             }
         }
     }
 
-    private void releaseRouteInputSemaphore() {
+    private void releaseInputCommandsSemaphore() {
         try {
             Thread.sleep(500);
-            routeInputSem.release();
+            inputCommandsSem.release();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

@@ -16,6 +16,7 @@ public class RouterRequestHandler extends Thread {
     private Socket socket;
     private OutputStreamWriter writer;
     private Router router;
+    private boolean running = true;
 
     public RouterRequestHandler(Router router , Socket socket) {
         this.socket = socket;
@@ -35,7 +36,7 @@ public class RouterRequestHandler extends Thread {
     public void run() {
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            while (true) {
+            while (running) {
                 String action = reader.readLine();
                 switch (action) {
                     case "CONNECTIVITY_TABLE":
@@ -55,6 +56,9 @@ public class RouterRequestHandler extends Thread {
                     case "ROUTING":
                         handleRouting(reader);
                         break;
+                    case "KILL":
+                        handleKill();
+                        break;
                 }
 
             }
@@ -62,6 +66,12 @@ public class RouterRequestHandler extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleKill() {
+        logR(router.getRouterId() , "Received Kill Request.");
+        running = false;
+        router.kill();
     }
 
     private void handleRouting(BufferedReader reader) throws IOException {
