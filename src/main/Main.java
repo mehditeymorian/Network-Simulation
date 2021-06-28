@@ -1,8 +1,6 @@
 package main;
 
-import main.core.Manager;
-import main.core.NetworkConfig;
-import main.log.LogManager;
+import main.core.NetworkManager;
 
 import java.io.IOException;
 import java.util.logging.Logger;
@@ -16,9 +14,9 @@ public class Main {
     public static void main(String[] args) throws IOException {
         init();
         logC("Starting Manager");
-        String fileName = "main/config.txt";
-        Manager manager = new Manager(fileName);
-        manager.start();
-        System.out.println(manager);
+        String fileName = "main/config2.txt";
+        NetworkManager networkManager = new NetworkManager(fileName);
+        networkManager.start();
+        System.out.println(networkManager);
     }
 }

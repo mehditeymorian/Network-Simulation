@@ -1,13 +1,14 @@
-package main.core;
+package main.handlers;
 
-import main.Main;
-import main.log.LogManager;
+import main.core.Router;
 import main.model.Connectivity;
 import main.model.RouterInfo;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.net.Socket;
-import java.util.stream.Collectors;
 
 import static main.log.LogManager.logR;
 
@@ -15,8 +16,9 @@ public class RouterRequestHandler extends Thread {
     private Socket socket;
     private OutputStreamWriter writer;
     private Router router;
+    private boolean running = true;
 
-    public RouterRequestHandler(Router router, Socket socket) {
+    public RouterRequestHandler(Router router , Socket socket) {
         this.socket = socket;
         this.router = router;
         initSocketOutputWriter(socket);
@@ -34,7 +36,7 @@ public class RouterRequestHandler extends Thread {
     public void run() {
         try {
             BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            while (true) {
+            while (running) {
                 String action = reader.readLine();
                 switch (action) {
                     case "CONNECTIVITY_TABLE":
@@ -47,6 +49,15 @@ public class RouterRequestHandler extends Thread {
 
                     case "NETWORK_READY":
                         logR(router.getRouterId() , "Received Network Ready Signal.");
+                        int networkSize = Integer.parseInt(reader.readLine());
+                        router.setNetworkSize(networkSize);
+                        router.startFlooding();
+                        break;
+                    case "ROUTING":
+                        handleRouting(reader);
+                        break;
+                    case "KILL":
+                        handleKill();
                         break;
                 }
 
@@ -55,6 +66,29 @@ public class RouterRequestHandler extends Thread {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void handleKill() {
+        logR(router.getRouterId() , "Received Kill Request.");
+        running = false;
+        router.kill();
+    }
+
+    private void handleRouting(BufferedReader reader) throws IOException {
+        String[] line = reader.readLine().split(" ");
+        int start;
+        int end;
+        try {
+             start = Integer.parseInt(line[0]);
+             end = Integer.parseInt(line[1]);
+        } catch (NumberFormatException e) {
+            line = reader.readLine().split(" ");
+             start = Integer.parseInt(line[0]);
+             end = Integer.parseInt(line[1]);
+        }
+
+        router.startRouting(start , end);
+        logR(router.getRouterId() , "Received Routing Packet From Manager. Destination: Router %d." , end);
     }
 
     public void sendReadyForRoutingSignal() throws IOException {
@@ -70,11 +104,11 @@ public class RouterRequestHandler extends Thread {
             int routerId = Integer.parseInt(reader.readLine());
             int routerDistance = Integer.parseInt(reader.readLine());
             String[] connectionDetails = reader.readLine().split(" ");
-            RouterInfo routerInfo = new RouterInfo(Integer.parseInt(connectionDetails[0]),
-                    connectionDetails[1],
+            RouterInfo routerInfo = new RouterInfo(Integer.parseInt(connectionDetails[0]) ,
+                    connectionDetails[1] ,
                     Integer.parseInt(connectionDetails[2]));
 
-            Connectivity neighbor = new Connectivity(routerId, routerInfo, routerDistance);
+            Connectivity neighbor = new Connectivity(routerId , routerInfo , routerDistance);
             this.router.addNeighbors(neighbor);
 
         }

@@ -1,6 +1,7 @@
-package main.core;
+package main.handlers;
 
 
+import main.core.NetworkManager;
 import main.model.Connectivity;
 
 import java.io.BufferedReader;
@@ -13,20 +14,20 @@ import java.util.List;
 import static main.log.LogManager.logM;
 
 public class ManagerRequestHandler extends Thread {
-    private Manager manager;
+    private NetworkManager networkManager;
     private Socket socket;
     private int routerId;
     private OutputStreamWriter writer;
 
 
-    public static ManagerRequestHandler handle(Manager manager, Socket socket) {
-        ManagerRequestHandler managerRequestHandler = new ManagerRequestHandler(manager, socket);
+    public static ManagerRequestHandler handle(NetworkManager networkManager , Socket socket) {
+        ManagerRequestHandler managerRequestHandler = new ManagerRequestHandler(networkManager , socket);
         managerRequestHandler.start();
         return managerRequestHandler;
     }
 
-    private ManagerRequestHandler(Manager manager, Socket socket) {
-        this.manager = manager;
+    private ManagerRequestHandler(NetworkManager networkManager , Socket socket) {
+        this.networkManager = networkManager;
         this.socket = socket;
         initSocketOutputWriter(socket);
     }
@@ -55,11 +56,9 @@ public class ManagerRequestHandler extends Thread {
                     case "ACK":
                         handleAckRequest(reader);
                         break;
-
                     case "READY_FOR_ROUTING":
-                        this.manager.incrementNumOfReadyForRoutingRouters();
+                        this.networkManager.incrementAckedRouterCount();
                         break;
-
                 }
 
 
@@ -69,11 +68,37 @@ public class ManagerRequestHandler extends Thread {
         }
     }
 
+    public void routePacket(int destination) {
+        try {
+            writer.write("ROUTING");
+            crlf();
+            writer.write(String.format("%d %d" , routerId , destination));
+            crlf();
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     public void sendNetworkReady() throws IOException {
         writer.write("NETWORK_READY");
         crlf();
+        writer.write(String.valueOf(networkManager.getConfig().getSize()));
         crlf();
         writer.flush();
+    }
+
+    public void sendKillRequest() {
+        try {
+            writer.write("KILL");
+            crlf();
+            crlf();
+            writer.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     private void handleAckRequest(BufferedReader reader) throws IOException {
@@ -86,13 +111,13 @@ public class ManagerRequestHandler extends Thread {
         logM("Received Ready Signal from router %d." , routerId);
         reader.readLine();
         reader.readLine();
-        manager.incrementReadyRouterCount();
+        networkManager.incrementReadyRouterCount();
     }
 
     private void handleUdpPortRequest(BufferedReader reader) throws IOException {
         int udpPort = Integer.parseInt(reader.readLine());
-        routerId = manager.getConfig().findRouter(udpPort);
-        List<Connectivity> routerNeighbors = manager.getConfig().getRouterNeighbors(routerId);
+        routerId = networkManager.getConfig().findRouter(udpPort);
+        List<Connectivity> routerNeighbors = networkManager.getConfig().getRouterNeighbors(routerId);
         sendRouterNeighbors(routerNeighbors);
         reader.readLine();
         logM("UDP Port %d Received from Router %d." , udpPort , routerId);
@@ -133,5 +158,9 @@ public class ManagerRequestHandler extends Thread {
 
     private void crlf() throws IOException {
         writer.write("\r\n");
+    }
+
+    public int getRouterId() {
+        return routerId;
     }
 }

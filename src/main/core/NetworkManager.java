@@ -1,21 +1,22 @@
 package main.core;
 
 
-import main.Main;
-import main.log.LogManager;
+import main.handlers.ManagerRequestHandler;
 
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static main.log.LogManager.logM;
 
 
-public class Manager extends Thread {
+public class NetworkManager extends Thread {
     private final NetworkConfig config;
     private ServerSocket serverSocket;
     private final AtomicBoolean safeSent;
@@ -23,11 +24,14 @@ public class Manager extends Thread {
     private final List<ManagerRequestHandler> handlers;
     private final AtomicBoolean networkReadySent;
     private final AtomicInteger ackedRoutersCount;
+    private int onlineRoutersCount;
+    private Semaphore inputCommandsSem;
 
 
-    public Manager(String fileName) {
+    public NetworkManager(String fileName) {
         config = new NetworkConfig(fileName);
         handlers = new ArrayList<>();
+        inputCommandsSem = new Semaphore(0);
         safeSent = new AtomicBoolean();
         readyRoutersCount = new AtomicInteger();
         networkReadySent = new AtomicBoolean();
@@ -56,7 +60,7 @@ public class Manager extends Thread {
     @SuppressWarnings("InfiniteLoopStatement")
     @Override
     public void run() {
-        while (true) {
+        while (++onlineRoutersCount <= config.getSize()) {
             try {
                 Socket tcp = serverSocket.accept();
                 ManagerRequestHandler handler = ManagerRequestHandler.handle(this , tcp);
@@ -64,8 +68,41 @@ public class Manager extends Thread {
             } catch (IOException e) {
                 e.printStackTrace();
             }
-            
+        }
 
+        inputCommands();
+    }
+
+    private void inputCommands() {
+        try {
+            inputCommandsSem.acquire();
+        } catch (InterruptedException ignored) {}
+
+        Scanner input = new Scanner(System.in);
+        System.out.println("Commands:");
+        System.out.println("\tRouting: Example:0 3 // routing from 0 to 3");
+        System.out.println("\tQuit: Example:quit 3 // remove router 3 from network");
+        while (input.hasNextLine()) {
+            try {
+                String[] line = input.nextLine().toLowerCase().split(" ");
+                if (line[0].equals("quit")) {
+                    int routerId = Integer.parseInt(line[1]);
+                    killRouter(routerId);
+                }else {
+                    int src = Integer.parseInt(line[0]);
+                    int destination = Integer.parseInt(line[1]);
+                    routePacket(src,destination);
+                }
+            } catch (Exception ignored) {}
+        }
+    }
+
+    private void killRouter(int routerId) {
+        for (ManagerRequestHandler handler : handlers) {
+            if (handler.getRouterId() == routerId) {
+                handler.sendKillRequest();
+                break;
+            }
         }
     }
 
@@ -87,7 +124,7 @@ public class Manager extends Thread {
         }
     }
 
-    public void incrementNumOfReadyForRoutingRouters() throws IOException {
+    public void incrementAckedRouterCount() throws IOException {
         if (networkReadySent.get()) return;
         synchronized (this){
             if(networkReadySent.get()) return;
@@ -97,8 +134,26 @@ public class Manager extends Thread {
                 for (ManagerRequestHandler handler : handlers) {
                     handler.sendNetworkReady();
                 }
+                releaseInputCommandsSemaphore();
             }
         }
     }
 
+    private void releaseInputCommandsSemaphore() {
+        try {
+            Thread.sleep(500);
+            inputCommandsSem.release();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void routePacket(int src , int destination) {
+        for (ManagerRequestHandler handler : handlers) {
+            if (handler.getRouterId() == src) {
+                handler.routePacket(destination);
+                break;
+            }
+        }
+    }
 }
